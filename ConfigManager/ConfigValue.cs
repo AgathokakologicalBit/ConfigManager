@@ -11,7 +11,7 @@ namespace ConfigManager
         #region Data
         private Dictionary<string, List<ConfigValue>> _values;
         private string _data;
-        private List<ConfigValue> _parsedData;
+        private IReadOnlyList<ConfigValue> _parsedData;
 
         private static readonly IReadOnlyDictionary<string, string> swapList
             = new Dictionary<string, string>
@@ -44,23 +44,26 @@ namespace ConfigManager
         {
             this._data = data;
             this._values = new Dictionary<string, List<ConfigValue>>();
-            this._parsedData = new List<ConfigValue>();
-
+            
             if (final)
             {
-                this._parsedData.Add(this);
+                this._parsedData = (new List<ConfigValue>() { this }).AsReadOnly();
             }
             else
             {
-                this.ParseData(_data);
+                this._parsedData = this.ParseData(_data).AsReadOnly();
             }
         }
 
 
         #region Parsing
-        private void ParseData(string data)
+        private List<ConfigValue> ParseData(string data)
         {
-            if (String.IsNullOrWhiteSpace(data)) return;
+            var dataParsed = new List<ConfigValue>();
+            if (String.IsNullOrWhiteSpace(data))
+            {
+                return dataParsed;
+            }
 
             int from = 0;
             int index = 0;
@@ -68,7 +71,7 @@ namespace ConfigManager
             {
                 if (data[index] == '"')
                 {
-                    _parsedData.Add(new ConfigValue(ParseString(data, ref index), true));
+                    dataParsed.Add(new ConfigValue(ParseString(data, ref index), true));
                     continue;
                 }
 
@@ -77,7 +80,7 @@ namespace ConfigManager
                     index += 1;
                 }
 
-                _parsedData.Add(new ConfigValue(data.Substring(from, index - from), true));
+                dataParsed.Add(new ConfigValue(data.Substring(from, index - from), true));
                 while (index < data.Length && Char.IsWhiteSpace(data[index]))
                 {
                     index += 1;
@@ -85,19 +88,25 @@ namespace ConfigManager
 
                 from = index;
             }
+
+            return dataParsed;
         }
 
-        private string ParseString(string data, ref int index)
+        private static string ParseString(string data, ref int index)
         {
             int from = ++index;
 
             while (index < data.Length)
             {
                 if (data[index] == '"')
+                {
                     return UnescapeString(data.Substring(from, index++ - from));
+                }
 
                 if (data[index++] == '\\')
+                {
                     ++index;
+                }
             }
 
             throw new FormatException("String does not contains closing character");
@@ -116,7 +125,7 @@ namespace ConfigManager
         /// <returns>List of saved values</returns>
         public List<ConfigValue> GetAll(string name)
         {
-            _values.TryGetValue(name.ToLower(), out var values);
+            _values.TryGetValue(name.ToLowerInvariant(), out var values);
             return values ?? new List<ConfigValue>();
         }
 
@@ -165,12 +174,15 @@ namespace ConfigManager
                 return targets;
             }
 
-            path = path.ToLower();
-            while (path != "")
+            var pathLower = path.ToLowerInvariant();
+            int position = 0;
+            while (position < pathLower.Length)
             {
-                if (Char.IsDigit(path[0]))
+                if (Char.IsDigit(pathLower[0]))
                 {
-                    string indexStr = new string(path.TakeWhile(Char.IsDigit).ToArray());
+                    string indexStr = new string(
+                        pathLower.Skip(position).TakeWhile(Char.IsDigit).ToArray()
+                    );
                     int index = int.Parse(indexStr);
                     var newTarget = targets.ElementAtOrDefault(index);
                     if (newTarget == null)
@@ -180,11 +192,13 @@ namespace ConfigManager
 
                     targets.Clear();
                     targets.Add(newTarget);
-                    path = indexStr.Length == path.Length ? "" : path.Substring(indexStr.Length);
+                    position += indexStr.Length;
                 }
-                else if (Char.IsLetter(path[0]))
+                else if (Char.IsLetter(pathLower[0]))
                 {
-                    string key = new string(path.TakeWhile(Char.IsLetter).ToArray());
+                    string key = new string(
+                        pathLower.Skip(position).TakeWhile(Char.IsLetter).ToArray()
+                    );
                     var newTargets = targets.FirstOrDefault()?.GetAll(key);
                     if (newTargets == null)
                     {
@@ -192,15 +206,17 @@ namespace ConfigManager
                     }
 
                     targets = newTargets;
-                    path = key.Length == path.Length ? "" : path.Substring(key.Length);
+                    position += key.Length;
                 }
-                else if (path[0] == '.')
+                else if (pathLower[0] == '.')
                 {
-                    path = path.Substring(1);
+                    position += 1;
                 }
-                else if (path[0] == '$' && Char.IsDigit(path.ElementAtOrDefault(1)))
+                else if (pathLower[0] == '$' && Char.IsDigit(pathLower.ElementAtOrDefault(1)))
                 {
-                    string indexStr = new string(path.TakeWhile(c => Char.IsDigit(c) || c == '$').ToArray());
+                    string indexStr = new string(
+                        pathLower.Skip(position).TakeWhile(c => Char.IsDigit(c) || c == '$').ToArray()
+                    );
                     int index = int.Parse(indexStr.Substring(1));
                     var target = targets[0];
                     var newTarget = target.AsConfigArray().ElementAtOrDefault(index);
@@ -211,12 +227,11 @@ namespace ConfigManager
 
                     targets.Clear();
                     targets.Add(newTarget);
-
-                    path = indexStr.Length == path.Length ? "" : path.Substring(indexStr.Length);
+                    position += indexStr.Length;
                 }
                 else
                 {
-                    throw new FormatException($"Unexpected symbol '{path[0]}'({(byte)path[0]})");
+                    throw new FormatException($"Unexpected symbol '{pathLower[0]}'({(byte)pathLower[0]})");
                 }
             }
 
@@ -271,12 +286,12 @@ namespace ConfigManager
         /// <param name="index">Target index in list</param>
         public void Set(string name, ConfigValue value, int index = -1)
         {
-            name = name.ToLower();
+            name = name.ToLowerInvariant();
 
             if (_values.ContainsKey(name))
             {
-                if (index == -1) _values[name].Add(value);
-                else _values[name][index] = value;
+                if (index == -1) { _values[name].Add(value); }
+                else { _values[name][index] = value; }
             }
             else
             {
@@ -312,7 +327,7 @@ namespace ConfigManager
         /// <returns>Is config contains given identifier</returns>
         public bool Contains(string name)
         {
-            return _values.ContainsKey(name.ToLower());
+            return _values.ContainsKey(name.ToLowerInvariant());
         }
 
         /// <summary>
@@ -370,7 +385,7 @@ namespace ConfigManager
         /// data is splitted by whitespace.
         /// </summary>
         /// <returns>Data as a list of Config values</returns>
-        public List<ConfigValue> AsConfigList() => _parsedData;
+        public IReadOnlyList<ConfigValue> AsConfigList() => _parsedData;
         /// <summary>
         /// Gets data as an array of ConfigValues.
         /// data is splitted by whitespace.
@@ -383,7 +398,7 @@ namespace ConfigManager
         /// data is splitted by whitespace.
         /// </summary>
         /// <returns>Data as a list of string</returns>
-        public List<string> AsList() => _parsedData.Select(cv => cv.AsString()).ToList();
+        public IReadOnlyList<string> AsList() => _parsedData.Select(cv => cv.AsString()).ToList().AsReadOnly();
         /// <summary>
         /// Gets data as an array of strings.
         /// data is splitted by whitespace.

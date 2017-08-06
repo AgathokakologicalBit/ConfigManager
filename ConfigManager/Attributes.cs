@@ -11,10 +11,10 @@ namespace ConfigManager
         {
             if (path == null)
             {
-                throw new Exception("Path can not be null");
+                throw new ArgumentNullException("Path can not be null");
             }
 
-            DataPath = path.ToLower();
+            DataPath = path.ToLowerInvariant();
         }
     }
 }

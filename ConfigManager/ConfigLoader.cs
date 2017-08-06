@@ -15,6 +15,23 @@ namespace ConfigManager
         private static readonly MethodInfo methodAsCustom;
         #endregion
 
+        #region State
+        private class State
+        {
+            public int Line { get; set; }
+            public string[] Data { get; set; }
+
+            public Stack<ConfigValue> Context { get; private set; }
+
+            public State(string[] data)
+            {
+                this.Line = 0;
+                this.Data = data;
+                this.Context = new Stack<ConfigValue>();
+            }
+        }
+        #endregion
+
         static Config()
         {
             methodLoadToClass = typeof(Config).GetMethod("LoadToClass", new[] { typeof(ConfigValue) });
@@ -175,11 +192,6 @@ namespace ConfigManager
 
             return (T)collection;
         }
-
-        private static object GetDefaultFor(Type t)
-        {
-            return t.IsValueType ? Activator.CreateInstance(t) : null;
-        }
         #endregion
 
         #region Parsers
@@ -216,9 +228,10 @@ namespace ConfigManager
 
                 var name = len < 0 ? data : data.Substring(0, len);
                 var value = len < 0 ? "" : data.Substring(len).Trim();
+                lastConfigValue = new ConfigValue(value);
                 state.Context.Peek().Set(
                     name,
-                    lastConfigValue = new ConfigValue(value)
+                    lastConfigValue
                 );
                 state.Line += 1;
             }

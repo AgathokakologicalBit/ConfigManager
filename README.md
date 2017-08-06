@@ -2,7 +2,14 @@
 Light configuration manager that supports loading into different targets: Class / Special dictionary
 
 # Installing library
-...
+Latest builds:
+
+| type    | version | link       |
+|---------|---------|------------|
+| release | ?       | [---](#) |
+| alpha   | 0.6     | [download](https://github.com/Mikhail158/ConfigManager/releases/tag/v0.6a) |
+
+Alpha versions are very unstable. It is not recommended to use them in your projects.
 
 # Getting started
 Library provides basic class ```Config``` for working with data.
@@ -35,4 +42,4 @@ Each line consists of several parts:
 For accessing that data using ConfigManager [special methods](#) are used.
 
 # Implementing configuration in your project
-On [wiki pages](#) you might find everything you need to start working with configuration manager
+On [wiki pages](https://github.com/Mikhail158/ConfigManager/wiki) you might find everything you need to start working with configuration manager

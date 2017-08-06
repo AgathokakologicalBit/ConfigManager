@@ -9,9 +9,9 @@ namespace ConfigManager
     public class ConfigValue
     {
         #region Data
-        private Dictionary<string, List<ConfigValue>> _values;
-        private string _data;
-        private IReadOnlyList<ConfigValue> _parsedData;
+        private readonly Dictionary<string, List<ConfigValue>> _values;
+        private readonly string _data;
+        private readonly IReadOnlyList<ConfigValue> _parsedData;
 
         private static readonly IReadOnlyDictionary<string, string> swapList
             = new Dictionary<string, string>
@@ -40,24 +40,24 @@ namespace ConfigManager
             )
         { }
 
-        private ConfigValue(string data, bool final = false)
+        private ConfigValue(string data, bool final)
         {
-            this._data = data;
-            this._values = new Dictionary<string, List<ConfigValue>>();
+            _data = data;
+            _values = new Dictionary<string, List<ConfigValue>>();
             
             if (final)
             {
-                this._parsedData = (new List<ConfigValue>() { this }).AsReadOnly();
+                _parsedData = (new List<ConfigValue>() { this }).AsReadOnly();
             }
             else
             {
-                this._parsedData = this.ParseData(_data).AsReadOnly();
+                _parsedData = ParseData(_data).AsReadOnly();
             }
         }
 
 
         #region Parsing
-        private List<ConfigValue> ParseData(string data)
+        private static List<ConfigValue> ParseData(string data)
         {
             var dataParsed = new List<ConfigValue>();
             if (String.IsNullOrWhiteSpace(data))
@@ -286,16 +286,16 @@ namespace ConfigManager
         /// <param name="index">Target index in list</param>
         public void Set(string name, ConfigValue value, int index = -1)
         {
-            name = name.ToLowerInvariant();
+            var nameLower = name.ToLowerInvariant();
 
-            if (_values.ContainsKey(name))
+            if (_values.ContainsKey(nameLower))
             {
-                if (index == -1) { _values[name].Add(value); }
-                else { _values[name][index] = value; }
+                if (index == -1) { _values[nameLower].Add(value); }
+                else { _values[nameLower][index] = value; }
             }
             else
             {
-                _values[name] = new List<ConfigValue>(new[] { value });
+                _values[nameLower] = new List<ConfigValue>(new[] { value });
             }
         }
 

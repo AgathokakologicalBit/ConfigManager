@@ -109,7 +109,7 @@ namespace ConfigManager
 
             foreach (FieldInfo field in typeof(T).GetFields())
             {
-                string path = field.Name.ToLower();
+                string path = field.Name.ToLowerInvariant();
                 var dataSourceAttribute = field.GetCustomAttribute<ConfigDataSource>();
                 if (dataSourceAttribute != null)
                 {

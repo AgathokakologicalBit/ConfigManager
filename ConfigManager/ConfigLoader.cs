@@ -36,7 +36,7 @@ namespace ConfigManager
         {
             methodLoadToClass = typeof(Config).GetMethod("LoadToClass", new[] { typeof(ConfigValue) });
             methodLoadToCollection = typeof(Config).GetMethod("LoadToCollection");
-            methodAsCustom = typeof(ConfigValue).GetMethod("AsCustom");
+            methodAsCustom = typeof(ConfigValue).GetMethod("AsCustomFromRaw");
         }
 
         #region Loaders

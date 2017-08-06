@@ -178,7 +178,7 @@ namespace ConfigManager
             int position = 0;
             while (position < pathLower.Length)
             {
-                if (Char.IsDigit(pathLower[0]))
+                if (Char.IsDigit(pathLower[position]))
                 {
                     string indexStr = new string(
                         pathLower.Skip(position).TakeWhile(Char.IsDigit).ToArray()
@@ -194,7 +194,7 @@ namespace ConfigManager
                     targets.Add(newTarget);
                     position += indexStr.Length;
                 }
-                else if (Char.IsLetter(pathLower[0]))
+                else if (Char.IsLetter(pathLower[position]))
                 {
                     string key = new string(
                         pathLower.Skip(position).TakeWhile(Char.IsLetter).ToArray()
@@ -208,11 +208,11 @@ namespace ConfigManager
                     targets = newTargets;
                     position += key.Length;
                 }
-                else if (pathLower[0] == '.')
+                else if (pathLower[position] == '.')
                 {
                     position += 1;
                 }
-                else if (pathLower[0] == '$' && Char.IsDigit(pathLower.ElementAtOrDefault(1)))
+                else if (pathLower[position] == '$' && Char.IsDigit(pathLower.ElementAtOrDefault(1)))
                 {
                     string indexStr = new string(
                         pathLower.Skip(position).TakeWhile(c => Char.IsDigit(c) || c == '$').ToArray()
@@ -346,39 +346,45 @@ namespace ConfigManager
         /// Gets data as raw string
         /// </summary>
         /// <returns>String data</returns>
-        public string AsString() => _data;
+        public string AsRawString() => _data;
+
         /// <summary>
-        /// Gets data as escaped raw string
+        /// Gets data as parsed string
+        /// </summary>
+        /// <returns>String data</returns>
+        public string AsString() => _parsedData[0]._data;
+        /// <summary>
+        /// Gets data as escaped parsed string
         /// </summary>
         /// <returns>Escaped string data</returns>
-        public string AsEscapedString() => EscapeString(_data);
+        public string AsEscapedString() => EscapeString(_parsedData[0]._data);
 
         /// <summary>
         /// Gets data as boolean value
         /// </summary>
         /// <returns>Boolean value</returns>
-        public bool AsBoolean() => bool.Parse(_data);
+        public bool AsBoolean() => bool.Parse(_parsedData[0]._data);
 
         /// <summary>
         /// Gets data as 32 bit integer(int) value
         /// </summary>
         /// <returns>Int32 value</returns>
-        public Int32 AsInt() => Int32.Parse(_data);
+        public Int32 AsInt() => Int32.Parse(_parsedData[0]._data);
         /// <summary>
         /// Gets data as 64 bit integer(long) value
         /// </summary>
         /// <returns>Int64 value</returns>
-        public Int64 AsLong() => Int64.Parse(_data);
+        public Int64 AsLong() => Int64.Parse(_parsedData[0]._data);
         /// <summary>
         /// Gets data as single precision floating point(float) value
         /// </summary>
         /// <returns>Single precision floating point value</returns>
-        public float AsFloat() => Single.Parse(_data);
+        public float AsFloat() => Single.Parse(_parsedData[0]._data);
         /// <summary>
         /// Gets data as double precision floating point(double) value
         /// </summary>
         /// <returns>Double precision floating point value</returns>
-        public double AsDouble() => Double.Parse(_data);
+        public double AsDouble() => Double.Parse(_parsedData[0]._data);
 
         /// <summary>
         /// Gets data as a list of ConfigValues.
@@ -413,6 +419,18 @@ namespace ConfigManager
         /// </summary>
         /// <returns>Converted data</returns>
         public T AsCustom<T>()
+        {
+            var tc = TypeDescriptor.GetConverter(typeof(T));
+            return (T)tc.ConvertFromString(_parsedData[0]._data);
+        }
+
+        /// <summary>
+        /// Gets RAW data as value with specified type.
+        /// 
+        /// Throws NotSupportedException if data can not be converted to target type.
+        /// </summary>
+        /// <returns>Converted raw data</returns>
+        public T AsCustomFromRaw<T>()
         {
             var tc = TypeDescriptor.GetConverter(typeof(T));
             return (T)tc.ConvertFromString(_data);

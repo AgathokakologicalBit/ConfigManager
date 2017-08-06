@@ -23,9 +23,9 @@ namespace ConfigManager
                 { "\\\"", "\"" }
             };
         private static readonly Regex regexEscapeSwap
-            = new Regex(String.Join("|", swapList.Keys.Select(k => k.Replace(@"\", @"\\"))));
+            = new Regex(String.Join("|", swapList.Keys.Select(k => k.Replace("\\", "\\\\"))));
         private static readonly Regex regexUnescapeSwap
-            = new Regex(String.Join("|", swapList.Values.Select(v => v.Replace(@"\", @"\\"))));
+            = new Regex(String.Join("|", swapList.Values.Select(v => v.Replace("\\", "\\\\"))));
         #endregion
 
         #region Initialisation methods
@@ -44,7 +44,7 @@ namespace ConfigManager
         {
             _data = data;
             _values = new Dictionary<string, List<ConfigValue>>();
-            
+
             if (final)
             {
                 _parsedData = (new List<ConfigValue>() { this }).AsReadOnly();
@@ -339,7 +339,7 @@ namespace ConfigManager
         {
             return GetAllByPath(path).Count > 0;
         }
-#endregion
+        #endregion
 
         #region Convertion methods
         /// <summary>

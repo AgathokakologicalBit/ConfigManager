@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -123,10 +124,15 @@ namespace ConfigManager
         /// </summary>
         /// <param name="name">Value identifier</param>
         /// <returns>List of saved values</returns>
-        public List<ConfigValue> GetAll(string name)
+        public IReadOnlyList<ConfigValue> GetAll(string name)
         {
-            _values.TryGetValue(name.ToLowerInvariant(), out var values);
-            return values ?? new List<ConfigValue>();
+            if (name == null)
+            {
+                throw new ArgumentNullException("name");
+            }
+
+            _values.TryGetValue(name.ToUpperInvariant(), out var values);
+            return values.AsReadOnly() ?? new List<ConfigValue>().AsReadOnly();
         }
 
         /// <summary>
@@ -165,7 +171,7 @@ namespace ConfigManager
         /// </summary>
         /// <param name="path">Path to values</param>
         /// <returns>Config values list</returns>
-        public List<ConfigValue> GetAllByPath(string path)
+        public IReadOnlyList<ConfigValue> GetAllByPath(string path)
         {
             List<ConfigValue> targets = new List<ConfigValue>() { this };
 
@@ -174,7 +180,7 @@ namespace ConfigManager
                 return targets;
             }
 
-            var pathLower = path.ToLowerInvariant();
+            var pathLower = path.ToUpperInvariant();
             int position = 0;
             while (position < pathLower.Length)
             {
@@ -183,7 +189,7 @@ namespace ConfigManager
                     string indexStr = new string(
                         pathLower.Skip(position).TakeWhile(Char.IsDigit).ToArray()
                     );
-                    int index = int.Parse(indexStr);
+                    int index = int.Parse(indexStr, NumberStyles.Integer, CultureInfo.InvariantCulture);
                     var newTarget = targets.ElementAtOrDefault(index);
                     if (newTarget == null)
                     {
@@ -199,13 +205,17 @@ namespace ConfigManager
                     string key = new string(
                         pathLower.Skip(position).TakeWhile(Char.IsLetter).ToArray()
                     );
-                    var newTargets = targets.FirstOrDefault()?.GetAll(key);
-                    if (newTargets == null)
+                    var newTargetsList = targets.FirstOrDefault()?.GetAll(key);
+                    if (newTargetsList == null)
                     {
                         return new List<ConfigValue>();
                     }
 
-                    targets = newTargets;
+                    targets.Clear();
+                    foreach (var newTarget in newTargetsList)
+                    {
+                        targets.Add(newTarget);
+                    }
                     position += key.Length;
                 }
                 else if (pathLower[position] == '.')
@@ -217,7 +227,7 @@ namespace ConfigManager
                     string indexStr = new string(
                         pathLower.Skip(position).TakeWhile(c => Char.IsDigit(c) || c == '$').ToArray()
                     );
-                    int index = int.Parse(indexStr.Substring(1));
+                    int index = int.Parse(indexStr.Substring(1), NumberStyles.Integer, CultureInfo.InvariantCulture);
                     var target = targets[0];
                     var newTarget = target.AsConfigArray().ElementAtOrDefault(index);
                     if (newTarget == null)
@@ -286,7 +296,16 @@ namespace ConfigManager
         /// <param name="index">Target index in list</param>
         public void Set(string name, ConfigValue value, int index = -1)
         {
-            var nameLower = name.ToLowerInvariant();
+            if (name == null)
+            {
+                throw new ArgumentNullException("name");
+            }
+            if (value == null)
+            {
+                throw new ArgumentNullException("value");
+            }
+
+            var nameLower = name.ToUpperInvariant();
 
             if (_values.ContainsKey(nameLower))
             {
@@ -327,7 +346,12 @@ namespace ConfigManager
         /// <returns>Is config contains given identifier</returns>
         public bool Contains(string name)
         {
-            return _values.ContainsKey(name.ToLowerInvariant());
+            if (name == null)
+            {
+                throw new ArgumentNullException("name");
+            }
+
+            return _values.ContainsKey(name.ToUpperInvariant());
         }
 
         /// <summary>
@@ -369,22 +393,22 @@ namespace ConfigManager
         /// Gets data as 32 bit integer(int) value
         /// </summary>
         /// <returns>Int32 value</returns>
-        public Int32 AsInt() => Int32.Parse(_parsedData[0]._data);
+        public Int32 AsInt() => Int32.Parse(_parsedData[0]._data, NumberStyles.Integer, CultureInfo.InvariantCulture);
         /// <summary>
         /// Gets data as 64 bit integer(long) value
         /// </summary>
         /// <returns>Int64 value</returns>
-        public Int64 AsLong() => Int64.Parse(_parsedData[0]._data);
+        public Int64 AsLong() => Int64.Parse(_parsedData[0]._data, NumberStyles.Integer, CultureInfo.InvariantCulture);
         /// <summary>
         /// Gets data as single precision floating point(float) value
         /// </summary>
         /// <returns>Single precision floating point value</returns>
-        public float AsFloat() => Single.Parse(_parsedData[0]._data);
+        public float AsFloat() => Single.Parse(_parsedData[0]._data, NumberStyles.Number, CultureInfo.InvariantCulture);
         /// <summary>
         /// Gets data as double precision floating point(double) value
         /// </summary>
         /// <returns>Double precision floating point value</returns>
-        public double AsDouble() => Double.Parse(_parsedData[0]._data);
+        public double AsDouble() => Double.Parse(_parsedData[0]._data, NumberStyles.Number, CultureInfo.InvariantCulture);
 
         /// <summary>
         /// Gets data as a list of ConfigValues.

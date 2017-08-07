@@ -35,7 +35,7 @@ namespace ConfigManagerTest
 
             Assert.AreEqual(1, config.GetKeys().Length, "1 value should be loaded");
 
-            List<ConfigValue> values = config.GetAll(config.GetKeys()[0]);
+            IReadOnlyList<ConfigValue> values = config.GetAll(config.GetKeys()[0]);
             Assert.IsNotNull(values, "Should get all existing values from key");
             Assert.AreEqual(2, values.Count, "Should get exactly 2 values for key");
             Assert.AreEqual("1", ConfigTestTools.GetData(values[0]), "Should have a data after key 1");

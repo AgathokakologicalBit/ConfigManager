@@ -10,9 +10,12 @@ namespace ConfigManager
     public static partial class Config
     {
         #region Method links
-        private static readonly MethodInfo methodLoadToClass;
-        private static readonly MethodInfo methodLoadToCollection;
-        private static readonly MethodInfo methodAsCustom;
+        private static readonly MethodInfo methodLoadToClass
+            = typeof(Config).GetMethod("LoadToClass", new[] { typeof(ConfigValue) });
+        private static readonly MethodInfo methodLoadToCollection
+            = typeof(Config).GetMethod("LoadToCollection");
+        private static readonly MethodInfo methodAsCustom
+            = typeof(ConfigValue).GetMethod("AsCustomFromRaw");
         #endregion
 
         #region State
@@ -32,13 +35,6 @@ namespace ConfigManager
         }
         #endregion
 
-        static Config()
-        {
-            methodLoadToClass = typeof(Config).GetMethod("LoadToClass", new[] { typeof(ConfigValue) });
-            methodLoadToCollection = typeof(Config).GetMethod("LoadToCollection");
-            methodAsCustom = typeof(ConfigValue).GetMethod("AsCustomFromRaw");
-        }
-
         #region Loaders
         /// <summary>
         /// Loads configuration from given file
@@ -57,6 +53,11 @@ namespace ConfigManager
         /// <returns>Parsed configuration tree</returns>
         public static ConfigValue Load(string data)
         {
+            if (data == null)
+            {
+                throw new ArgumentNullException("data");
+            }
+
             var state = new State(data.Split('\n'));
 
             var coreConfigValue = new ConfigValue(null);
@@ -100,6 +101,11 @@ namespace ConfigManager
         public static T LoadToClass<T>(ConfigValue config)
             where T : class, new()
         {
+            if (config == null)
+            {
+                throw new ArgumentNullException("config");
+            }
+
             if (typeof(T).GetInterfaces().Contains(typeof(ICollection)))
             {
                 return LoadToCollectionWrap<T>(config);
@@ -109,7 +115,7 @@ namespace ConfigManager
 
             foreach (FieldInfo field in typeof(T).GetFields())
             {
-                string path = field.Name.ToLowerInvariant();
+                string path = field.Name.ToUpperInvariant();
                 var dataSourceAttribute = field.GetCustomAttribute<ConfigDataSource>();
                 if (dataSourceAttribute != null)
                 {
@@ -244,7 +250,7 @@ namespace ConfigManager
                 && state.Line < 1)
             {
                 throw new FormatException(
-                    $"Invalide root indentation level({lineIndentation.Length})\n" +
+                    $"Invalid root indentation level({lineIndentation.Length})\n" +
                     $"Expected no indentation at the beginning of config"
                 );
             }

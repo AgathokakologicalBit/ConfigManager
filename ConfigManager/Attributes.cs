@@ -3,7 +3,7 @@
 namespace ConfigManager
 {
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = false, Inherited = false)]
-    public class ConfigDataSource : Attribute
+    public sealed class ConfigDataSource : Attribute
     {
         /// <summary>
         /// Hold Config value path as data source
@@ -14,14 +14,14 @@ namespace ConfigManager
         /// Specifies path from wich data will be loaded into target field
         /// </summary>
         /// <param name="path">Path to value(-s)</param>
-        public ConfigDataSource(string path)
+        public ConfigDataSource(string dataPath)
         {
-            if (path == null)
+            if (dataPath == null)
             {
-                throw new ArgumentNullException("Path can not be null");
+                throw new ArgumentNullException("dataPath", "dataPath can not be null");
             }
 
-            DataPath = path.ToLowerInvariant();
+            DataPath = dataPath.ToUpperInvariant();
         }
     }
 }

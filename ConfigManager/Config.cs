@@ -1,4 +1,5 @@
-﻿namespace ConfigManager
+﻿[assembly: System.CLSCompliant(true)]
+namespace ConfigManager
 {
     public static partial class Config
     {

@@ -77,6 +77,22 @@ namespace ConfigManagerTest
             );
         }
 
+        [TestMethod]
+        public void TestLoadEnclosedValue()
+        {
+            var config = LoadValidConfig("key value\n  key inner");
+            Assert.AreEqual(1, config.GetKeys().Length, "1 value should be loaded at top level");
+
+            ConfigValue value = config.Get(config.GetKeys()[0]);
+            Assert.IsNotNull(value, "Should get a value from key");
+            Assert.AreEqual("value", ConfigTestTools.GetData(value), "Should have a data value");
+            Assert.AreEqual(1, value.GetKeys().Length, "Should have 1 inner value");
+
+            ConfigValue innerValue = value.Get(value.GetKeys()[0]);
+            Assert.IsNotNull(value, "Should get a value from inner key");
+            Assert.AreEqual("inner", ConfigTestTools.GetData(innerValue), "Should have a data value");
+        }
+
         private static ConfigValue LoadValidConfig(string data)
         {
             ConfigValue config = Config.Load(data);

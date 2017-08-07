@@ -132,7 +132,7 @@ namespace ConfigManager
             }
 
             _values.TryGetValue(name.ToUpperInvariant(), out var values);
-            return values.AsReadOnly() ?? new List<ConfigValue>().AsReadOnly();
+            return values?.AsReadOnly() ?? new List<ConfigValue>().AsReadOnly();
         }
 
         /// <summary>
@@ -245,7 +245,7 @@ namespace ConfigManager
                 }
             }
 
-            return targets;
+            return targets.AsReadOnly();
         }
 
         /// <summary>

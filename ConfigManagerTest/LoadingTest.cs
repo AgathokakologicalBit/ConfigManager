@@ -77,6 +77,42 @@ namespace ConfigManagerTest
             );
         }
 
+        [TestMethod]
+        public void TestLoadEnclosedValue()
+        {
+            var config = LoadValidConfig("key value\n  key inner");
+            Assert.AreEqual(1, config.GetKeys().Length, "1 value should be loaded at top level");
+
+            ConfigValue value = config.Get(config.GetKeys()[0]);
+            Assert.IsNotNull(value, "Should get a value from key");
+            Assert.AreEqual("value", ConfigTestTools.GetData(value), "Should have a data value");
+            Assert.AreEqual(1, value.GetKeys().Length, "Should have 1 inner value");
+
+            ConfigValue innerValue = value.Get(value.GetKeys()[0]);
+            Assert.IsNotNull(value, "Should get a value from inner key");
+            Assert.AreEqual("inner", ConfigTestTools.GetData(innerValue), "Should have a data value");
+        }
+
+        [TestMethod]
+        [ExpectedException(
+            typeof(FormatException),
+            "Should throw exception if first line have a wrong(non-empty) indentation level"
+        )]
+        public void TestLoadWrongRootIndentationLevel()
+        {
+            Config.Load("  key value");
+        }
+
+        [TestMethod]
+        [ExpectedException(
+            typeof(FormatException),
+            "Should throw exception if indentation levels content doesn't match"
+        )]
+        public void TestLoadWrongEnclosedIndentationLevel()
+        {
+            Config.Load("key\n inner\n\twrong");
+        }
+
         private static ConfigValue LoadValidConfig(string data)
         {
             ConfigValue config = Config.Load(data);

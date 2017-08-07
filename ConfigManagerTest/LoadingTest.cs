@@ -42,6 +42,23 @@ namespace ConfigManagerTest
             Assert.AreEqual("2", ConfigTestTools.GetData(values[1]), "Should have a data after key 1");
         }
 
+        [TestMethod]
+        public void TestLoadMultipleKeys()
+        {
+            var config = LoadValidConfig("keyA 1\nkeyB 2");
+
+            Assert.AreEqual(2, config.GetKeys().Length, "1 value should be loaded");
+
+            ConfigValue valueA = config.Get(config.GetKeys()[0]);
+            ConfigValue valueB = config.Get(config.GetKeys()[1]);
+
+            Assert.IsNotNull(valueA, "Should get a value from key 1");
+            Assert.IsNotNull(valueB, "Should get a value from key 2");
+            
+            Assert.AreEqual("1", ConfigTestTools.GetData(valueA), "Should have a data after key 1");
+            Assert.AreEqual("2", ConfigTestTools.GetData(valueB), "Should have a data after key 2");
+        }
+
         private static ConfigValue LoadValidConfig(string data)
         {
             ConfigValue config = Config.Load(data);

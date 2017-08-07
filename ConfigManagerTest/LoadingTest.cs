@@ -47,7 +47,7 @@ namespace ConfigManagerTest
         {
             var config = LoadValidConfig("keyA 1\nkeyB 2");
 
-            Assert.AreEqual(2, config.GetKeys().Length, "1 value should be loaded");
+            Assert.AreEqual(2, config.GetKeys().Length, "2 values should be loaded");
 
             ConfigValue valueA = config.Get(config.GetKeys()[0]);
             ConfigValue valueB = config.Get(config.GetKeys()[1]);

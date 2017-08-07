@@ -93,6 +93,26 @@ namespace ConfigManagerTest
             Assert.AreEqual("inner", ConfigTestTools.GetData(innerValue), "Should have a data value");
         }
 
+        [TestMethod]
+        [ExpectedException(
+            typeof(FormatException),
+            "Should throw exception if first line have a wrong(non-empty) indentation level"
+        )]
+        public void TestLoadWrongRootIndentationLevel()
+        {
+            Config.Load("  key value");
+        }
+
+        [TestMethod]
+        [ExpectedException(
+            typeof(FormatException),
+            "Should throw exception if indentation levels content doesn't match"
+        )]
+        public void TestLoadWrongEnclosedIndentationLevel()
+        {
+            Config.Load("key\n inner\n\twrong");
+        }
+
         private static ConfigValue LoadValidConfig(string data)
         {
             ConfigValue config = Config.Load(data);

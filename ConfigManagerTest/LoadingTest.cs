@@ -47,7 +47,7 @@ namespace ConfigManagerTest
         {
             var config = LoadValidConfig("keyA 1\nkeyB 2");
 
-            Assert.AreEqual(2, config.GetKeys().Length, "1 value should be loaded");
+            Assert.AreEqual(2, config.GetKeys().Length, "2 values should be loaded");
 
             ConfigValue valueA = config.Get(config.GetKeys()[0]);
             ConfigValue valueB = config.Get(config.GetKeys()[1]);
@@ -57,6 +57,24 @@ namespace ConfigManagerTest
             
             Assert.AreEqual("1", ConfigTestTools.GetData(valueA), "Should have a data after key 1");
             Assert.AreEqual("2", ConfigTestTools.GetData(valueB), "Should have a data after key 2");
+        }
+
+        [TestMethod]
+        public void TestLoadMultipleData()
+        {
+            var config = LoadValidConfig("key 3 2 1");
+            Assert.AreEqual(1, config.GetKeys().Length, "1 value should be loaded");
+
+            ConfigValue value = config.Get(config.GetKeys()[0]);
+            Assert.IsNotNull(value, "Should get a value from key");
+
+            Assert.AreEqual("3 2 1", ConfigTestTools.GetData(value), "Should have a data after key");
+            Assert.AreEqual(3, value.AsArray()?.Length, "Should have 3 data values in value");
+
+            CollectionAssert.AreEqual(
+                new[] { "3", "2", "1" }, value.AsArray(),
+                "Should have data values in right order"
+            );
         }
 
         private static ConfigValue LoadValidConfig(string data)

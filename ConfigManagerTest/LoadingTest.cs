@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ConfigManager;
 using System;
+using System.Collections.Generic;
 
 namespace ConfigManagerTest
 {
@@ -24,7 +25,21 @@ namespace ConfigManagerTest
 
             ConfigValue value = config.Get(config.GetKeys()[0]);
             Assert.IsNotNull(value, "Should get existing key");
-            Assert.AreEqual("value", ConfigTestTools.GetData(value), "Should have data after key");
+            Assert.AreEqual("value", ConfigTestTools.GetData(value), "Should have a data after key");
+        }
+
+        [TestMethod]
+        public void TestLoadMultipleValues()
+        {
+            var config = LoadValidConfig("key 1\nkey 2");
+
+            Assert.AreEqual(1, config.GetKeys().Length, "1 value should be loaded");
+
+            List<ConfigValue> values = config.GetAll(config.GetKeys()[0]);
+            Assert.IsNotNull(values, "Should get all existing values from key");
+            Assert.AreEqual(2, values.Count, "Should get exactly 2 values for key");
+            Assert.AreEqual("1", ConfigTestTools.GetData(values[0]), "Should have a data after key 1");
+            Assert.AreEqual("2", ConfigTestTools.GetData(values[1]), "Should have a data after key 1");
         }
 
         private static ConfigValue LoadValidConfig(string data)

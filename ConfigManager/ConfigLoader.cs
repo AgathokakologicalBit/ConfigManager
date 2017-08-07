@@ -241,7 +241,7 @@ namespace ConfigManager
             (State state, string lineIndentation, string baseIndentation)
         {
             if (lineIndentation.Length > baseIndentation.Length
-                && state.Line <= 1)
+                && state.Line < 1)
             {
                 throw new FormatException(
                     $"Invalide root indentation level({lineIndentation.Length})\n" +

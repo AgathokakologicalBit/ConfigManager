@@ -43,7 +43,14 @@ namespace ConfigManager
         /// <returns>Parsed configuration tree</returns>
         public static ConfigValue LoadFromFile(string filename)
         {
-            return Load(File.ReadAllText(filename));
+            try
+            {
+                return Load(File.ReadAllText(filename));
+            }
+            catch (FileNotFoundException)
+            {
+                return Config.Create();
+            }
         }
 
         /// <summary>
@@ -60,7 +67,7 @@ namespace ConfigManager
 
             var state = new State(data.Split('\n'));
 
-            var coreConfigValue = new ConfigValue(null);
+            var coreConfigValue = Config.Create();
             state.Context.Push(coreConfigValue);
 
             ParseLevel(state, "");
@@ -97,13 +104,13 @@ namespace ConfigManager
         /// </summary>
         /// <typeparam name="T">Target class</typeparam>
         /// <param name="config">Configuration</param>
-        /// <returns>Class, filled with configuration values</returns>
+        /// <returns>Class, filled with configuration values oe null</returns>
         public static T LoadToClass<T>(ConfigValue config)
             where T : class, new()
         {
             if (config == null)
             {
-                throw new ArgumentNullException("config");
+                return null;
             }
 
             if (typeof(T).GetInterfaces().Contains(typeof(ICollection)))
@@ -116,7 +123,7 @@ namespace ConfigManager
             foreach (FieldInfo field in typeof(T).GetFields())
             {
                 string path = field.Name.ToUpperInvariant();
-                var dataSourceAttribute = field.GetCustomAttribute<ConfigDataSource>();
+                var dataSourceAttribute = field.GetCustomAttribute<ConfigDataSourceAttribute>();
                 if (dataSourceAttribute != null)
                 {
                     path = dataSourceAttribute.DataPath;
@@ -124,11 +131,11 @@ namespace ConfigManager
 
                 if (!config.ContainsPath(path))
                 {
-                    // Skipping not relevaln fields
+                    // Skipping not relevant fields
                     continue;
                 }
-
-                if (field.FieldType.IsValueType
+                
+                if (field.FieldType.IsSerializable
                     || field.FieldType.GetConstructor(Type.EmptyTypes) == null)
                 {
                     var genericAsCustom = methodAsCustom.MakeGenericMethod(field.FieldType);
@@ -143,7 +150,47 @@ namespace ConfigManager
                 }
                 else
                 {
-                    var genericLoadToClass = methodLoadToClass.MakeGenericMethod(field.FieldType);
+
+                    var fieldType = field.FieldType;
+                    
+                    var typeSource = field.GetCustomAttribute<ConfigDataTypeSourceAttribute>();
+                    var typeName =
+                        config.GetByPath(typeSource?.DataPath)
+                        ?.AsString()
+                        ?.ToUpperInvariant();
+                    if (typeName != null)
+                    {
+                        var mapping = field.GetCustomAttributes<ConfigDataTypeMappingAttribute>();
+                        fieldType = mapping?.FirstOrDefault(attr => attr.TypeName == typeName)?.FieldType;
+
+                        if (fieldType == null)
+                        {
+                            List<Type> possibleTypesList =
+                                Assembly
+                                    .GetEntryAssembly()
+                                    .GetTypes()
+                                    .Where(t => field.FieldType.IsAssignableFrom(t))
+                                    .ToList();
+
+                            foreach (var type in possibleTypesList)
+                            {
+                                if (type.Name.ToUpperInvariant() == typeName)
+                                {
+                                    fieldType = type;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (fieldType == null)
+                        {
+                            throw new TypeLoadException(
+                                $"Can not find type with name '{typeName}'"
+                            );
+                        }
+                    }
+
+                    var genericLoadToClass = methodLoadToClass.MakeGenericMethod(fieldType);
                     var innerInstance = genericLoadToClass.Invoke(null, new[] { config.GetByPath(path) });
                     field.SetValue(instance, innerInstance);
                 }
@@ -177,8 +224,8 @@ namespace ConfigManager
         {
             var elementType = typeof(E);
             var collection = (ICollection<E>)new T();
-
-            if (elementType.IsValueType
+            
+            if (elementType.IsPrimitive
                 || elementType.GetConstructor(Type.EmptyTypes) == null)
             {
                 foreach (ConfigValue value in configValues)

@@ -128,7 +128,7 @@ namespace ConfigManager
         {
             if (name == null)
             {
-                throw new ArgumentNullException("name");
+                return null;
             }
 
             _values.TryGetValue(name.ToUpperInvariant(), out var values);
@@ -173,21 +173,25 @@ namespace ConfigManager
         /// <returns>Config values list</returns>
         public IReadOnlyList<ConfigValue> GetAllByPath(string path)
         {
-            List<ConfigValue> targets = new List<ConfigValue>() { this };
+            if (path == null)
+            {
+                return null;
+            }
 
-            if (String.IsNullOrEmpty(path))
+            List<ConfigValue> targets = new List<ConfigValue>() { this };
+            if (String.IsNullOrWhiteSpace(path))
             {
                 return targets;
             }
 
-            var pathLower = path.ToUpperInvariant();
+            var pathUpper = path.Trim().ToUpperInvariant();
             int position = 0;
-            while (position < pathLower.Length)
+            while (position < pathUpper.Length)
             {
-                if (Char.IsDigit(pathLower[position]))
+                if (Char.IsDigit(pathUpper[position]))
                 {
                     string indexStr = new string(
-                        pathLower.Skip(position).TakeWhile(Char.IsDigit).ToArray()
+                        pathUpper.Skip(position).TakeWhile(Char.IsDigit).ToArray()
                     );
                     int index = int.Parse(indexStr, NumberStyles.Integer, CultureInfo.InvariantCulture);
                     var newTarget = targets.ElementAtOrDefault(index);
@@ -200,10 +204,10 @@ namespace ConfigManager
                     targets.Add(newTarget);
                     position += indexStr.Length;
                 }
-                else if (Char.IsLetter(pathLower[position]))
+                else if (Char.IsLetter(pathUpper[position]))
                 {
                     string key = new string(
-                        pathLower.Skip(position).TakeWhile(Char.IsLetter).ToArray()
+                        pathUpper.Skip(position).TakeWhile(Char.IsLetter).ToArray()
                     );
                     var newTargetsList = targets.FirstOrDefault()?.GetAll(key);
                     if (newTargetsList == null)
@@ -218,14 +222,14 @@ namespace ConfigManager
                     }
                     position += key.Length;
                 }
-                else if (pathLower[position] == '.')
+                else if (pathUpper[position] == '.')
                 {
                     position += 1;
                 }
-                else if (pathLower[position] == '$' && Char.IsDigit(pathLower.ElementAtOrDefault(1)))
+                else if (pathUpper[position] == '$' && Char.IsDigit(pathUpper.ElementAtOrDefault(1)))
                 {
                     string indexStr = new string(
-                        pathLower.Skip(position).TakeWhile(c => Char.IsDigit(c) || c == '$').ToArray()
+                        pathUpper.Skip(position).TakeWhile(c => Char.IsDigit(c) || c == '$').ToArray()
                     );
                     int index = int.Parse(indexStr.Substring(1), NumberStyles.Integer, CultureInfo.InvariantCulture);
                     var target = targets[0];
@@ -241,7 +245,7 @@ namespace ConfigManager
                 }
                 else
                 {
-                    throw new FormatException($"Unexpected symbol '{pathLower[0]}'({(byte)pathLower[0]})");
+                    throw new FormatException($"Unexpected symbol '{pathUpper[0]}'({(byte)pathUpper[0]})");
                 }
             }
 
@@ -257,7 +261,7 @@ namespace ConfigManager
         /// <returns>Config value or null</returns>
         public ConfigValue GetByPath(string path)
         {
-            return GetAllByPath(path).FirstOrDefault();
+            return GetAllByPath(path)?.FirstOrDefault();
         }
 
         /// <summary>

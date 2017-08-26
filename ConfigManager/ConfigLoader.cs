@@ -122,7 +122,7 @@ namespace ConfigManager
 
             foreach (FieldInfo field in typeof(T).GetFields())
             {
-                string path = field.Name.ToUpperInvariant();
+                string path = field.Name.ToLowerInvariant();
                 var dataSourceAttribute = field.GetCustomAttribute<ConfigDataSourceAttribute>();
                 if (dataSourceAttribute != null)
                 {
@@ -157,7 +157,7 @@ namespace ConfigManager
                     var typeName =
                         config.GetByPath(typeSource?.DataPath)
                         ?.AsString()
-                        ?.ToUpperInvariant();
+                        ?.ToLowerInvariant();
                     if (typeName != null)
                     {
                         var mapping = field.GetCustomAttributes<ConfigDataTypeMappingAttribute>();
@@ -174,7 +174,7 @@ namespace ConfigManager
 
                             foreach (var type in possibleTypesList)
                             {
-                                if (type.Name.ToUpperInvariant() == typeName)
+                                if (type.Name.ToLowerInvariant() == typeName)
                                 {
                                     fieldType = type;
                                     break;
@@ -225,7 +225,7 @@ namespace ConfigManager
             var elementType = typeof(E);
             var collection = (ICollection<E>)new T();
             
-            if (elementType.IsPrimitive
+            if (elementType.IsSerializable
                 || elementType.GetConstructor(Type.EmptyTypes) == null)
             {
                 foreach (ConfigValue value in configValues)

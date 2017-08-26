@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace ConfigManager
@@ -11,8 +12,8 @@ namespace ConfigManager
     {
         #region Data
         private readonly Dictionary<string, List<ConfigValue>> _values;
-        private readonly string _data;
-        private readonly IReadOnlyList<ConfigValue> _parsedData;
+        private string _data;
+        private readonly List<ConfigValue> _parsedData;
 
         private static readonly IReadOnlyDictionary<string, string> swapList
             = new Dictionary<string, string>
@@ -20,7 +21,6 @@ namespace ConfigManager
                 { @"\\", @"\" },
                 { @"\n", "\n" },
                 { @"\t", "\t" },
-                { @"\s", " " },
                 { "\\\"", "\"" }
             };
         private static readonly Regex regexEscapeSwap
@@ -48,11 +48,11 @@ namespace ConfigManager
 
             if (final)
             {
-                _parsedData = (new List<ConfigValue>() { this }).AsReadOnly();
+                _parsedData = (new List<ConfigValue>() { this });
             }
             else
             {
-                _parsedData = ParseData(_data).AsReadOnly();
+                _parsedData = ParseData(_data);
             }
         }
 
@@ -131,7 +131,7 @@ namespace ConfigManager
                 return null;
             }
 
-            _values.TryGetValue(name.ToUpperInvariant(), out var values);
+            _values.TryGetValue(name.ToLowerInvariant(), out var values);
             return values?.AsReadOnly() ?? new List<ConfigValue>().AsReadOnly();
         }
 
@@ -184,14 +184,14 @@ namespace ConfigManager
                 return targets;
             }
 
-            var pathUpper = path.Trim().ToUpperInvariant();
+            var pathLower = path.Trim().ToLowerInvariant();
             int position = 0;
-            while (position < pathUpper.Length)
+            while (position < pathLower.Length)
             {
-                if (Char.IsDigit(pathUpper[position]))
+                if (Char.IsDigit(pathLower[position]))
                 {
                     string indexStr = new string(
-                        pathUpper.Skip(position).TakeWhile(Char.IsDigit).ToArray()
+                        pathLower.Skip(position).TakeWhile(Char.IsDigit).ToArray()
                     );
                     int index = int.Parse(indexStr, NumberStyles.Integer, CultureInfo.InvariantCulture);
                     var newTarget = targets.ElementAtOrDefault(index);
@@ -204,10 +204,10 @@ namespace ConfigManager
                     targets.Add(newTarget);
                     position += indexStr.Length;
                 }
-                else if (Char.IsLetter(pathUpper[position]))
+                else if (Char.IsLetter(pathLower[position]))
                 {
                     string key = new string(
-                        pathUpper.Skip(position).TakeWhile(Char.IsLetter).ToArray()
+                        pathLower.Skip(position).TakeWhile(Char.IsLetter).ToArray()
                     );
                     var newTargetsList = targets.FirstOrDefault()?.GetAll(key);
                     if (newTargetsList == null)
@@ -222,14 +222,14 @@ namespace ConfigManager
                     }
                     position += key.Length;
                 }
-                else if (pathUpper[position] == '.')
+                else if (pathLower[position] == '.')
                 {
                     position += 1;
                 }
-                else if (pathUpper[position] == '$' && Char.IsDigit(pathUpper.ElementAtOrDefault(1)))
+                else if (pathLower[position] == '$' && Char.IsDigit(pathLower.ElementAtOrDefault(1)))
                 {
                     string indexStr = new string(
-                        pathUpper.Skip(position).TakeWhile(c => Char.IsDigit(c) || c == '$').ToArray()
+                        pathLower.Skip(position).TakeWhile(c => Char.IsDigit(c) || c == '$').ToArray()
                     );
                     int index = int.Parse(indexStr.Substring(1), NumberStyles.Integer, CultureInfo.InvariantCulture);
                     var target = targets[0];
@@ -245,7 +245,7 @@ namespace ConfigManager
                 }
                 else
                 {
-                    throw new FormatException($"Unexpected symbol '{pathUpper[0]}'({(byte)pathUpper[0]})");
+                    throw new FormatException($"Unexpected symbol '{pathLower[0]}'({(byte)pathLower[0]})");
                 }
             }
 
@@ -298,7 +298,7 @@ namespace ConfigManager
         /// <param name="name">Value identifier</param>
         /// <param name="value">Config value</param>
         /// <param name="index">Target index in list</param>
-        public void Set(string name, ConfigValue value, int index = -1)
+        public ConfigValue Set(string name, ConfigValue value, int index = -1)
         {
             if (name == null)
             {
@@ -309,7 +309,7 @@ namespace ConfigManager
                 throw new ArgumentNullException("value");
             }
 
-            var nameLower = name.ToUpperInvariant();
+            var nameLower = name.ToLowerInvariant();
 
             if (_values.ContainsKey(nameLower))
             {
@@ -320,6 +320,8 @@ namespace ConfigManager
             {
                 _values[nameLower] = new List<ConfigValue>(new[] { value });
             }
+
+            return this;
         }
 
         /// <summary>
@@ -339,6 +341,84 @@ namespace ConfigManager
         {
             Set(name, ConfigValueFromCustom(value), index);
         }
+
+        public ConfigValue SetByPath(string path, ConfigValue value)
+        {
+            return SetByPathNamed(path, this, this, value, ":");
+        }
+
+        private static ConfigValue SetByPathNamed
+            (string path, ConfigValue target, ConfigValue parent, ConfigValue value, string name)
+        {
+            if (path == null) { return null; }
+
+            var pathLower = path.Trim().TrimStart('.').ToLowerInvariant();
+            if (String.IsNullOrEmpty(pathLower)) {
+                parent.Set(name, value);
+                return null;
+            }
+
+            if (Char.IsDigit(pathLower.First()))
+            {
+                string indexStr = new string(
+                    pathLower.TakeWhile(Char.IsDigit).ToArray()
+                );
+
+                int index = int.Parse(indexStr, NumberStyles.Integer, CultureInfo.InvariantCulture);
+
+                var data = SetByPathNamed(
+                    path: path.Substring(indexStr.Length),
+                    target: Config.Create(),
+                    parent: target,
+                    value: value,
+                    name: ":"
+                );
+                if (data != null)
+                {
+                    target.Set(
+                        name,
+                        data
+                    );
+                }
+            }
+            else if (Char.IsLetter(pathLower.First()))
+            {
+                string key = new string(
+                    pathLower.TakeWhile(Char.IsLetter).ToArray()
+                );
+
+                var data = SetByPathNamed(
+                    path: path.Substring(key.Length),
+                    target: Config.Create(),
+                    parent: target,
+                    value: value,
+                    name: key
+                );
+
+                if (data != null)
+                {
+                    target.Set(
+                        key,
+                        data
+                    );
+                }
+            }
+            else if (pathLower.First() == '$' && Char.IsDigit(pathLower.ElementAtOrDefault(1)))
+            {
+                string indexStr = new string(
+                    pathLower.Skip(1).TakeWhile(Char.IsDigit).ToArray()
+                );
+                int index = int.Parse(indexStr, NumberStyles.Integer, CultureInfo.InvariantCulture);
+                target.InsertIntoData(index, value._parsedData.First()._data);
+                target._data = target.ParsedDataToRawString();
+            }
+            else
+            {
+                throw new FormatException($"Unexpected symbol '{pathLower[0]}'({(byte)pathLower[0]})");
+            }
+
+            return target;
+        }
         #endregion
         #endregion
 
@@ -355,7 +435,7 @@ namespace ConfigManager
                 throw new ArgumentNullException("name");
             }
 
-            return _values.ContainsKey(name.ToUpperInvariant());
+            return _values.ContainsKey(name.ToLowerInvariant());
         }
 
         /// <summary>
@@ -385,7 +465,7 @@ namespace ConfigManager
         /// Gets data as escaped parsed string
         /// </summary>
         /// <returns>Escaped string data</returns>
-        public string AsEscapedString() => EscapeString(_parsedData[0]._data);
+        public string AsEscapedString() => EscapeString(_data);
 
         /// <summary>
         /// Gets data as boolean value
@@ -467,16 +547,38 @@ namespace ConfigManager
 
         #region Special methods
         private static string EscapeString(string data)
-            => regexUnescapeSwap.Replace(data, v => swapList.First(x => x.Value == v.Value).Key);
+            => regexUnescapeSwap.Replace(data ?? "", v => swapList.First(x => x.Value == v.Value).Key);
 
         private static string UnescapeString(string data)
-            => regexEscapeSwap.Replace(data, v => swapList[v.Value]);
+            => regexEscapeSwap.Replace(data ?? "", v => swapList[v.Value]);
 
         private static ConfigValue ConfigValueFromCustom<T>(T value)
         {
             var tc = TypeDescriptor.GetConverter(typeof(string));
             string stringValue = (string)tc.ConvertFrom(value);
             return new ConfigValue(stringValue);
+        }
+
+        private void InsertIntoData(int index, string value)
+        {
+            while (_parsedData.Count <= index)
+            {
+                _parsedData.Add(new ConfigValue(String.Empty, final: true));
+            }
+            _parsedData[index] = new ConfigValue(value, final: true);
+        }
+
+        private string ParsedDataToRawString()
+        {
+            var builder = new StringBuilder(_parsedData.Count * 2);
+
+            for (int index = 0; index < _parsedData.Count; ++index)
+            {
+                if (index != 0) { builder.Append(" "); }
+                builder.Append($"\"{EscapeString(_parsedData[index]._data)}\"");
+            }
+
+            return builder.ToString();
         }
         #endregion
     }

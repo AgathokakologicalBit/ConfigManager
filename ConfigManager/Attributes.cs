@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace ConfigManager
 {
@@ -17,7 +16,7 @@ namespace ConfigManager
         /// <param name="dataPath">Path to value(-s)</param>
         public ConfigDataSourceAttribute(string dataPath)
         {
-            DataPath = dataPath?.ToUpperInvariant();
+            DataPath = dataPath?.ToLowerInvariant();
         }
     }
 
@@ -35,7 +34,7 @@ namespace ConfigManager
         /// <param name="dataPath">Path to type name</param>
         public ConfigDataTypeSourceAttribute(string dataPath)
         {
-            DataPath = dataPath?.ToUpperInvariant();
+            DataPath = dataPath?.ToLowerInvariant();
         }
     }
 
@@ -67,7 +66,7 @@ namespace ConfigManager
                 throw new ArgumentNullException("type");
             }
 
-            TypeName = name.ToUpperInvariant();
+            TypeName = name.ToLowerInvariant();
             FieldType = type;
         }
     }

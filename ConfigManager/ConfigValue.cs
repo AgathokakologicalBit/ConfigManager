@@ -304,10 +304,7 @@ namespace ConfigManager
             {
                 throw new ArgumentNullException("name");
             }
-            if (value == null)
-            {
-                throw new ArgumentNullException("value");
-            }
+            if (value == null) { return this; }
 
             var nameLower = name.ToLowerInvariant();
 
@@ -344,7 +341,8 @@ namespace ConfigManager
 
         public ConfigValue SetByPath(string path, ConfigValue value)
         {
-            return SetByPathNamed(path, this, this, value, ":");
+            SetByPathNamed(path, this, this, value, ":");
+            return this;
         }
 
         private static ConfigValue SetByPathNamed

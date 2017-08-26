@@ -113,7 +113,6 @@ namespace ConfigManager
             {
                 foreach (E value in collection)
                 {
-                    if (value == null) { continue; }
                     config.Set(":", CVDataFromCustom(value));
                 }
             }
@@ -123,7 +122,6 @@ namespace ConfigManager
 
                 foreach (E value in collection)
                 {
-                    if (value == null) { continue; }
                     config.Set(":", (ConfigValue)genericConverter.Invoke(null, new object[] { value }));
                 }
             }

@@ -380,7 +380,6 @@ namespace ConfigManager
                     while (targetParent.GetAll(name).Count <= sindex)
                     {
                         targetParent.Set(name, "");
-                        Console.WriteLine(targetParent.GetAll(name).Count);
                     }
 
                     pathLower = pathLower.Substring(indexStr.Length).Trim().TrimStart('.');

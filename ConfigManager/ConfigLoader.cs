@@ -15,7 +15,7 @@ namespace ConfigManager
         private static readonly MethodInfo methodLoadToCollection
             = typeof(Config).GetMethod("LoadToCollection");
         private static readonly MethodInfo methodAsCustom
-            = typeof(ConfigValue).GetMethod("AsCustomFromRaw");
+            = typeof(ConfigValue).GetMethod("AsCustom");
         #endregion
 
         #region State

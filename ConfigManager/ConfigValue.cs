@@ -590,7 +590,8 @@ namespace ConfigManager
                 if (index != 0) { builder.Append(" "); }
 
                 var escaped = EscapeString(_parsedData[index]._data);
-                if (escaped != _parsedData[index]._data) {
+                if (escaped.Count(Char.IsWhiteSpace) != 0
+                    || escaped != _parsedData[index]._data) {
                     escaped = $"\"{escaped}\"";
                 }
 

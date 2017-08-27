@@ -7,7 +7,7 @@ Latest builds:
 | type    | version | link       |
 |---------|---------|------------|
 | release | ?       | [---](#) |
-| alpha   | 0.6     | [download](https://github.com/Mikhail158/ConfigManager/releases/tag/v0.6a) |
+| alpha   | 0.8     | [download](https://github.com/Mikhail158/ConfigManager/releases/tag/v0.8a) |
 
 Alpha versions are very unstable. It is not recommended to use them in your projects.
 

@@ -131,7 +131,7 @@ namespace ConfigManager
 
         private static ConfigValue CVDataFromCustom<T>(T value)
         {
-            return new ConfigValue(value.ToString());
+            return new ConfigValue($"\"{ConfigValue.EscapeString(value.ToString())}\"");
         }
     }
 }

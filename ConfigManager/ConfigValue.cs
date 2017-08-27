@@ -11,9 +11,9 @@ namespace ConfigManager
     public class ConfigValue
     {
         #region Data
-        private readonly Dictionary<string, List<ConfigValue>> _values;
+        private Dictionary<string, List<ConfigValue>> _values;
         private string _data;
-        private readonly List<ConfigValue> _parsedData;
+        private List<ConfigValue> _parsedData;
 
         private static readonly IReadOnlyDictionary<string, string> swapList
             = new Dictionary<string, string>
@@ -34,14 +34,14 @@ namespace ConfigManager
         /// Config values MUST NOT be created using this constrctor.
         /// </summary>
         /// <param name="data">---</param>
-        public ConfigValue(string data)
+        internal ConfigValue(string data)
             : this(
                  data: data,
                  final: false
             )
         { }
 
-        private ConfigValue(string data, bool final)
+        internal ConfigValue(string data, bool final)
         {
             _data = data;
             _values = new Dictionary<string, List<ConfigValue>>();
@@ -226,7 +226,7 @@ namespace ConfigManager
                 {
                     position += 1;
                 }
-                else if (pathLower[position] == '$' && Char.IsDigit(pathLower.ElementAtOrDefault(1)))
+                else if (pathLower[position] == '$' && Char.IsDigit(pathLower.ElementAtOrDefault(position + 1)))
                 {
                     string indexStr = new string(
                         pathLower.Skip(position).TakeWhile(c => Char.IsDigit(c) || c == '$').ToArray()
@@ -242,11 +242,19 @@ namespace ConfigManager
                     targets.Clear();
                     targets.Add(newTarget);
                     position += indexStr.Length;
+                    if (position < pathLower.Length)
+                    {
+                        throw new FormatException(
+                            $"Data arguments indexation must be the last operation. Rest: '{pathLower}'"
+                        );
+                    }
                 }
                 else
                 {
                     throw new FormatException($"Unexpected symbol '{pathLower[0]}'({(byte)pathLower[0]})");
                 }
+
+                if (targets.Count == 0) { return targets; }
             }
 
             return targets.AsReadOnly();
@@ -307,7 +315,6 @@ namespace ConfigManager
             if (value == null) { return this; }
 
             var nameLower = name.ToLowerInvariant();
-
             if (_values.ContainsKey(nameLower))
             {
                 if (index == -1) { _values[nameLower].Add(value); }
@@ -339,83 +346,91 @@ namespace ConfigManager
             Set(name, ConfigValueFromCustom(value), index);
         }
 
+        /// <summary>
+        /// Saves new values with given name
+        /// </summary>
+        /// <param name="path">Path to the value</param>
+        /// <param name="value"></param>
+        /// <returns></returns>
         public ConfigValue SetByPath(string path, ConfigValue value)
         {
-            SetByPathNamed(path, this, this, value, ":");
+            SetByPathNamed(path, this, value);
             return this;
         }
 
-        private static ConfigValue SetByPathNamed
-            (string path, ConfigValue target, ConfigValue parent, ConfigValue value, string name)
+        private static void SetByPathNamed
+            (string path, ConfigValue root, ConfigValue value)
         {
-            if (path == null) { return null; }
+            if (path == null || value == null) { return; }
 
-            var pathLower = path.Trim().TrimStart('.').ToLowerInvariant();
-            if (String.IsNullOrEmpty(pathLower)) {
-                parent.Set(name, value);
-                return null;
-            }
+            var pathLower = path.ToLowerInvariant().Trim().TrimStart('.');
+            var targetParent = root;
+            var target = root;
+            var name = ":";
 
-            if (Char.IsDigit(pathLower.First()))
-            {
-                string indexStr = new string(
-                    pathLower.TakeWhile(Char.IsDigit).ToArray()
-                );
-
-                int index = int.Parse(indexStr, NumberStyles.Integer, CultureInfo.InvariantCulture);
-
-                var data = SetByPathNamed(
-                    path: path.Substring(indexStr.Length),
-                    target: Config.Create(),
-                    parent: target,
-                    value: value,
-                    name: ":"
-                );
-                if (data != null)
+            while (!String.IsNullOrEmpty(pathLower)) {
+                if (Char.IsDigit(pathLower.FirstOrDefault()))
                 {
-                    target.Set(
-                        name,
-                        data
+                    string indexStr = new string(
+                        pathLower.TakeWhile(Char.IsDigit).ToArray()
                     );
+
+                    int sindex = int.Parse(indexStr, NumberStyles.Integer, CultureInfo.InvariantCulture);
+
+                    while (targetParent.GetAll(name).Count <= sindex)
+                    {
+                        targetParent.Set(name, "");
+                        Console.WriteLine(targetParent.GetAll(name).Count);
+                    }
+
+                    pathLower = pathLower.Substring(indexStr.Length).Trim().TrimStart('.');
+                    target = targetParent.GetAll(name)[sindex];
+                }
+                else if (Char.IsLetter(pathLower.First()))
+                {
+                    string key = new string(
+                        pathLower.TakeWhile(Char.IsLetter).ToArray()
+                    );
+
+                    pathLower = pathLower.Substring(key.Length).Trim().TrimStart('.');
+                    targetParent = target;
+                    if (!target.Contains(key))
+                    {
+                        target.Set(key, Config.Create());
+                    }
+                    target = target.Get(key);
+                    name = key;
+                }
+                else if (pathLower.First() == '$' && Char.IsDigit(pathLower.ElementAtOrDefault(1)))
+                {
+                    string indexStr = new string(
+                        pathLower.Skip(1).TakeWhile(Char.IsDigit).ToArray()
+                    );
+                    int sindex = int.Parse(indexStr, NumberStyles.Integer, CultureInfo.InvariantCulture);
+                    target.InsertIntoData(sindex, value._parsedData.First()._data);
+                    target._data = target.ParsedDataToRawString();
+
+                    pathLower = pathLower.Substring(indexStr.Length + 1).Trim().TrimStart('.');
+                    if (!String.IsNullOrEmpty(pathLower))
+                    {
+                        throw new FormatException(
+                            $"Data arguments indexation must be the last operation. Rest: '{pathLower}'"
+                        );
+                    }
+                    return;
+                }
+                else
+                {
+                    throw new FormatException($"Unexpected symbol '{pathLower[0]}'({(byte)pathLower[0]})");
                 }
             }
-            else if (Char.IsLetter(pathLower.First()))
-            {
-                string key = new string(
-                    pathLower.TakeWhile(Char.IsLetter).ToArray()
-                );
 
-                var data = SetByPathNamed(
-                    path: path.Substring(key.Length),
-                    target: Config.Create(),
-                    parent: target,
-                    value: value,
-                    name: key
-                );
-
-                if (data != null)
-                {
-                    target.Set(
-                        key,
-                        data
-                    );
-                }
-            }
-            else if (pathLower.First() == '$' && Char.IsDigit(pathLower.ElementAtOrDefault(1)))
+            target._data = value._data;
+            target._parsedData = value._parsedData;
+            foreach (var val in value._values)
             {
-                string indexStr = new string(
-                    pathLower.Skip(1).TakeWhile(Char.IsDigit).ToArray()
-                );
-                int index = int.Parse(indexStr, NumberStyles.Integer, CultureInfo.InvariantCulture);
-                target.InsertIntoData(index, value._parsedData.First()._data);
-                target._data = target.ParsedDataToRawString();
+                target._values.Add(val.Key, val.Value);
             }
-            else
-            {
-                throw new FormatException($"Unexpected symbol '{pathLower[0]}'({(byte)pathLower[0]})");
-            }
-
-            return target;
         }
         #endregion
         #endregion
@@ -463,7 +478,7 @@ namespace ConfigManager
         /// Gets data as escaped parsed string
         /// </summary>
         /// <returns>Escaped string data</returns>
-        public string AsEscapedString() => EscapeString(_data);
+        public string AsEscapedString() => EscapeString(AsString());
 
         /// <summary>
         /// Gets data as boolean value
@@ -544,13 +559,13 @@ namespace ConfigManager
         #endregion
 
         #region Special methods
-        private static string EscapeString(string data)
+        internal static string EscapeString(string data)
             => regexUnescapeSwap.Replace(data ?? "", v => swapList.First(x => x.Value == v.Value).Key);
 
-        private static string UnescapeString(string data)
+        internal static string UnescapeString(string data)
             => regexEscapeSwap.Replace(data ?? "", v => swapList[v.Value]);
 
-        private static ConfigValue ConfigValueFromCustom<T>(T value)
+        internal static ConfigValue ConfigValueFromCustom<T>(T value)
         {
             var tc = TypeDescriptor.GetConverter(typeof(string));
             string stringValue = (string)tc.ConvertFrom(value);
@@ -573,7 +588,13 @@ namespace ConfigManager
             for (int index = 0; index < _parsedData.Count; ++index)
             {
                 if (index != 0) { builder.Append(" "); }
-                builder.Append($"\"{EscapeString(_parsedData[index]._data)}\"");
+
+                var escaped = EscapeString(_parsedData[index]._data);
+                if (escaped != _parsedData[index]._data) {
+                    escaped = $"\"{escaped}\"";
+                }
+
+                builder.Append(escaped);
             }
 
             return builder.ToString();

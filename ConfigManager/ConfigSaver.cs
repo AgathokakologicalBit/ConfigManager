@@ -6,7 +6,7 @@ namespace ConfigManager
 {
     public static partial class Config
     {
-        public static readonly string BaseIndentation = " ";
+        public static readonly string BaseIndentation = "  ";
 
         public static string SaveToString(ConfigValue config)
         {
@@ -32,12 +32,10 @@ namespace ConfigManager
                 var valuesList = config.GetAll(key);
 
                 foreach (var value in valuesList) {
-                    var escapedString = value.AsEscapedString();
-                    if (escapedString != String.Empty)
-                    {
-                        escapedString = $" \"{escapedString}\"";
-                    }
-                    builder.AppendLine($"{currentIndentation}{key}{escapedString}");
+                    var raw = value.AsRawString();
+                    if (!String.IsNullOrEmpty(raw)) { raw = " " + raw; }
+
+                    builder.AppendLine($"{currentIndentation}{key}{raw}");
                     builder.Append(GenerateString(value, currentIndentation + BaseIndentation));
                 }
             }

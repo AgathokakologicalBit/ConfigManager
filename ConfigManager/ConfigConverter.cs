@@ -14,7 +14,9 @@ namespace ConfigManager
                 .GetMethods(BindingFlags.Static | BindingFlags.Public)
                 .First(m => m.Name == "ConvertFromClass");
         private static readonly MethodInfo methodConvertFromCollection
-            = typeof(Config).GetMethod("ConvertFromCollection");
+            = typeof(Config)
+                .GetMethods(BindingFlags.NonPublic | BindingFlags.Static)
+                .First(m => m.Name == "ConvertFromCollection");
         private static readonly MethodInfo methodCVDataFromCustom
             = typeof(Config)
                 .GetMethods(BindingFlags.NonPublic | BindingFlags.Static)
@@ -46,7 +48,7 @@ namespace ConfigManager
                 var fieldValue = field.GetValue(instance);
                 if (fieldValue == null) { continue; }
 
-                if (field.FieldType.IsSerializable
+                if (field.FieldType.IsPrimitive
                     || field.FieldType.GetConstructor(Type.EmptyTypes) == null)
                 {
                     var genericConverter = methodCVDataFromCustom.MakeGenericMethod(field.FieldType);
@@ -107,7 +109,7 @@ namespace ConfigManager
             var elementType = typeof(E);
             var config = Config.Create();
 
-            if (elementType.IsSerializable
+            if (elementType.IsPrimitive
                 || elementType.GetConstructor(Type.EmptyTypes) == null)
             {
                 foreach (E value in collection)

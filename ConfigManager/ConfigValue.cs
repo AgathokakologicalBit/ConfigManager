@@ -424,8 +424,13 @@ namespace ConfigManager
                 }
             }
 
-            target._data = value._data;
-            target._parsedData = value._parsedData;
+
+            if (value._data != null)
+            {
+                target._data = value._data;
+                target._parsedData = value._parsedData;
+            }
+
             foreach (var val in value._values)
             {
                 target._values.Add(val.Key, val.Value);
@@ -457,7 +462,7 @@ namespace ConfigManager
         /// <returns>Is config contains any value with given path</returns>
         public bool ContainsPath(string path)
         {
-            return GetAllByPath(path).Count > 0;
+            return path != null && GetAllByPath(path).Count > 0;
         }
         #endregion
 

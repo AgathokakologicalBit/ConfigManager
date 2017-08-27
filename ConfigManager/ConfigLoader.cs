@@ -13,7 +13,9 @@ namespace ConfigManager
         private static readonly MethodInfo methodLoadToClass
             = typeof(Config).GetMethod("LoadToClass", new[] { typeof(ConfigValue) });
         private static readonly MethodInfo methodLoadToCollection
-            = typeof(Config).GetMethod("LoadToCollection");
+            = typeof(Config)
+                .GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
+                .First(m => m.Name == "LoadToCollection");
         private static readonly MethodInfo methodAsCustom
             = typeof(ConfigValue).GetMethod("AsCustom");
         #endregion
@@ -135,7 +137,7 @@ namespace ConfigManager
                     continue;
                 }
                 
-                if (field.FieldType.IsSerializable
+                if (field.FieldType.IsPrimitive
                     || field.FieldType.GetConstructor(Type.EmptyTypes) == null)
                 {
                     var genericAsCustom = methodAsCustom.MakeGenericMethod(field.FieldType);
@@ -218,14 +220,14 @@ namespace ConfigManager
             return (T)genericLoadToCollection.Invoke(null, new[] { config.GetAll(keys[0]) });
         }
 
-        private static T LoadToCollection<T, E>(List<ConfigValue> configValues)
+        private static T LoadToCollection<T, E>(IReadOnlyList<ConfigValue> configValues)
             where T : class, ICollection, new()
             where E : new()
         {
             var elementType = typeof(E);
             var collection = (ICollection<E>)new T();
             
-            if (elementType.IsSerializable
+            if (elementType.IsPrimitive
                 || elementType.GetConstructor(Type.EmptyTypes) == null)
             {
                 foreach (ConfigValue value in configValues)

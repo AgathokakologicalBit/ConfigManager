@@ -136,7 +136,8 @@ namespace ConfigManager
             var escaped = ConfigValue.EscapeString(str);
 
             if (str.Count(Char.IsWhiteSpace) != 0
-                || escaped != str)
+                || escaped != str
+                || String.IsNullOrEmpty(escaped))
             {
                 escaped = $"\"{escaped}\"";
             }

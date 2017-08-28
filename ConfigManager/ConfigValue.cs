@@ -595,7 +595,8 @@ namespace ConfigManager
 
                 var escaped = EscapeString(_parsedData[index]._data);
                 if (escaped.Count(Char.IsWhiteSpace) != 0
-                    || escaped != _parsedData[index]._data) {
+                    || escaped != _parsedData[index]._data
+                    || String.IsNullOrEmpty(escaped)) {
                     escaped = $"\"{escaped}\"";
                 }
 

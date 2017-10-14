@@ -137,7 +137,7 @@ namespace ConfigManager
                     continue;
                 }
                 
-                if (field.FieldType.IsPrimitive
+                if (field.FieldType.GetTypeInfo().IsPrimitive
                     || field.FieldType.GetConstructor(Type.EmptyTypes) == null)
                 {
                     var genericAsCustom = methodAsCustom.MakeGenericMethod(field.FieldType);
@@ -227,7 +227,7 @@ namespace ConfigManager
             var elementType = typeof(E);
             var collection = (ICollection<E>)new T();
             
-            if (elementType.IsPrimitive
+            if (elementType.GetTypeInfo().IsPrimitive
                 || elementType.GetConstructor(Type.EmptyTypes) == null)
             {
                 foreach (ConfigValue value in configValues)

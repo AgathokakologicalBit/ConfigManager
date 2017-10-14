@@ -22,8 +22,7 @@ namespace ConfigManager
                 .GetMethods(BindingFlags.NonPublic | BindingFlags.Static)
                 .First(m => m.Name == "CVDataFromCustom");
         #endregion
-
-
+        
         public static ConfigValue ConvertFromClass<C>(C instance)
             where C: class, new()
         {
@@ -48,7 +47,7 @@ namespace ConfigManager
                 var fieldValue = field.GetValue(instance);
                 if (fieldValue == null) { continue; }
 
-                if (field.FieldType.IsPrimitive
+                if (field.FieldType.GetTypeInfo().IsPrimitive
                     || field.FieldType.GetConstructor(Type.EmptyTypes) == null)
                 {
                     var genericConverter = methodCVDataFromCustom.MakeGenericMethod(field.FieldType);
@@ -109,7 +108,7 @@ namespace ConfigManager
             var elementType = typeof(E);
             var config = Config.Create();
 
-            if (elementType.IsPrimitive
+            if (elementType.GetTypeInfo().IsPrimitive
                 || elementType.GetConstructor(Type.EmptyTypes) == null)
             {
                 foreach (E value in collection)

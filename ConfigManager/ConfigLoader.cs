@@ -10,13 +10,13 @@ namespace ConfigManager
     public static partial class Config
     {
         #region Method links
-        private static readonly MethodInfo methodLoadToClass
+        private static readonly MethodInfo MethodLoadToClass
             = typeof(Config).GetMethod("LoadToClass", new[] { typeof(ConfigValue) });
-        private static readonly MethodInfo methodLoadToCollection
+        private static readonly MethodInfo MethodLoadToCollection
             = typeof(Config)
                 .GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
                 .First(m => m.Name == "LoadToCollection");
-        private static readonly MethodInfo methodAsCustom
+        private static readonly MethodInfo MethodAsCustom
             = typeof(ConfigValue).GetMethod("AsCustom");
         #endregion
 
@@ -24,15 +24,15 @@ namespace ConfigManager
         private class State
         {
             public int Line { get; set; }
-            public string[] Data { get; set; }
+            public string[] Data { get; }
 
-            public Stack<ConfigValue> Context { get; private set; }
+            public Stack<ConfigValue> Context { get; }
 
             public State(string[] data)
             {
-                this.Line = 0;
-                this.Data = data;
-                this.Context = new Stack<ConfigValue>();
+                Line = 0;
+                Data = data;
+                Context = new Stack<ConfigValue>();
             }
         }
         #endregion
@@ -51,7 +51,7 @@ namespace ConfigManager
             }
             catch (FileNotFoundException)
             {
-                return Config.Create();
+                return Create();
             }
         }
 
@@ -64,12 +64,12 @@ namespace ConfigManager
         {
             if (data == null)
             {
-                throw new ArgumentNullException("data");
+                throw new ArgumentNullException(nameof(data));
             }
 
             var state = new State(data.Split('\n'));
 
-            var coreConfigValue = Config.Create();
+            var coreConfigValue = Create();
             state.Context.Push(coreConfigValue);
 
             ParseLevel(state, "");
@@ -120,11 +120,11 @@ namespace ConfigManager
                 return LoadToCollectionWrap<T>(config);
             }
 
-            T instance = new T();
+            var instance = new T();
 
-            foreach (FieldInfo field in typeof(T).GetFields())
+            foreach (var field in typeof(T).GetFields())
             {
-                string path = field.Name.ToLowerInvariant();
+                var path = field.Name.ToLowerInvariant();
                 var dataSourceAttribute = field.GetCustomAttribute<ConfigDataSourceAttribute>();
                 if (dataSourceAttribute != null)
                 {
@@ -140,8 +140,8 @@ namespace ConfigManager
                 if (field.FieldType.GetTypeInfo().IsPrimitive
                     || field.FieldType.GetConstructor(Type.EmptyTypes) == null)
                 {
-                    var genericAsCustom = methodAsCustom.MakeGenericMethod(field.FieldType);
-                    object value = genericAsCustom.Invoke(
+                    var genericAsCustom = MethodAsCustom.MakeGenericMethod(field.FieldType);
+                    var value = genericAsCustom.Invoke(
                         config.GetByPath(
                             path
                         ),
@@ -163,26 +163,14 @@ namespace ConfigManager
                     if (typeName != null)
                     {
                         var mapping = field.GetCustomAttributes<ConfigDataTypeMappingAttribute>();
-                        fieldType = mapping?.FirstOrDefault(attr => attr.TypeName == typeName)?.FieldType;
-
-                        if (fieldType == null)
-                        {
-                            List<Type> possibleTypesList =
-                                Assembly
-                                    .GetEntryAssembly()
-                                    .GetTypes()
-                                    .Where(t => field.FieldType.IsAssignableFrom(t))
-                                    .ToList();
-
-                            foreach (var type in possibleTypesList)
-                            {
-                                if (type.Name.ToLowerInvariant() == typeName)
-                                {
-                                    fieldType = type;
-                                    break;
-                                }
-                            }
-                        }
+                        fieldType = mapping
+                                        ?.FirstOrDefault(attr => attr.TypeName == typeName)
+                                        ?.FieldType
+                                    ?? Assembly
+                                        .GetEntryAssembly()
+                                        .GetTypes()
+                                        .Where(t => field.FieldType.IsAssignableFrom(t))
+                                        .FirstOrDefault(t => t.Name.ToLowerInvariant() == typeName);
 
                         if (fieldType == null)
                         {
@@ -192,8 +180,8 @@ namespace ConfigManager
                         }
                     }
 
-                    var genericLoadToClass = methodLoadToClass.MakeGenericMethod(fieldType);
-                    var innerInstance = genericLoadToClass.Invoke(null, new[] { config.GetByPath(path) });
+                    var genericLoadToClass = MethodLoadToClass.MakeGenericMethod(fieldType);
+                    var innerInstance = genericLoadToClass.Invoke(null, new object[] { config.GetByPath(path) });
                     field.SetValue(instance, innerInstance);
                 }
             }
@@ -215,33 +203,33 @@ namespace ConfigManager
             }
 
             var elementsType = typeof(T).GetGenericArguments().Single();
-            var genericLoadToCollection = methodLoadToCollection.MakeGenericMethod(typeof(T), elementsType);
+            var genericLoadToCollection = MethodLoadToCollection.MakeGenericMethod(typeof(T), elementsType);
 
-            return (T)genericLoadToCollection.Invoke(null, new[] { config.GetAll(keys[0]) });
+            return (T)genericLoadToCollection.Invoke(null, new object[] { config.GetAll(keys[0]) });
         }
 
-        private static T LoadToCollection<T, E>(IReadOnlyList<ConfigValue> configValues)
+        private static T LoadToCollection<T, TE>(IEnumerable<ConfigValue> configValues)
             where T : class, ICollection, new()
-            where E : new()
+            where TE : new()
         {
-            var elementType = typeof(E);
-            var collection = (ICollection<E>)new T();
+            var elementType = typeof(TE);
+            var collection = (ICollection<TE>)new T();
             
             if (elementType.GetTypeInfo().IsPrimitive
                 || elementType.GetConstructor(Type.EmptyTypes) == null)
             {
-                foreach (ConfigValue value in configValues)
+                foreach (var value in configValues)
                 {
-                    collection.Add(value.AsCustom<E>());
+                    collection.Add(value.AsCustom<TE>());
                 }
             }
             else
             {
-                var genericLoadToClass = methodLoadToClass.MakeGenericMethod(elementType);
+                var genericLoadToClass = MethodLoadToClass.MakeGenericMethod(elementType);
 
-                foreach (ConfigValue value in configValues)
+                foreach (var value in configValues)
                 {
-                    collection.Add((E)genericLoadToClass.Invoke(null, new[] { value }));
+                    collection.Add((TE)genericLoadToClass.Invoke(null, new object[] { value }));
                 }
             }
 
@@ -256,7 +244,7 @@ namespace ConfigManager
             while (state.Line < state.Data.Length)
             {
                 var line = state.Data[state.Line].TrimEnd();
-                if (String.IsNullOrWhiteSpace(line))
+                if (string.IsNullOrWhiteSpace(line))
                 {
                     state.Line += 1;
                     continue;
@@ -271,7 +259,7 @@ namespace ConfigManager
                     ParseLevel(state, lineIndentation);
                     continue;
                 }
-                else if (lineIndentation.Length < baseIndentation.Length)
+                if (lineIndentation.Length < baseIndentation.Length)
                 {
                     state.Context.Pop();
                     break;
@@ -292,6 +280,7 @@ namespace ConfigManager
             }
         }
 
+        
         private static void ValidateIndentationLevel
             (State state, string lineIndentation, string baseIndentation)
         {
@@ -300,7 +289,7 @@ namespace ConfigManager
             {
                 throw new FormatException(
                     $"Invalid root indentation level({lineIndentation.Length})\n" +
-                    $"Expected no indentation at the beginning of config"
+                    "Expected no indentation at the beginning of config"
                 );
             }
 
@@ -309,14 +298,14 @@ namespace ConfigManager
             {
                 throw new FormatException(
                     $"Indentation levels doesn't match on line {state.Line}\n" +
-                    $"Consider rechecking spaces and tabulations in text:\n"
+                    "Consider rechecking spaces and tabulations in text:\n"
                 );
             }
         }
 
         private static string GetIndentation(string line)
         {
-            int length = line.TakeWhile(Char.IsWhiteSpace).Count();
+            var length = line.TakeWhile(char.IsWhiteSpace).Count();
             return line.Substring(0, length);
         }
         #endregion

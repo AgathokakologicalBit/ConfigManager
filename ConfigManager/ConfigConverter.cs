@@ -6,38 +6,38 @@ using System.Reflection;
 
 namespace ConfigManager
 {
+    
     public static partial class Config
     {
         #region Method links
-        private static readonly MethodInfo methodConvertFromClass
+        private static readonly MethodInfo MethodConvertFromClass
             = typeof(Config)
                 .GetMethods(BindingFlags.Static | BindingFlags.Public)
                 .First(m => m.Name == "ConvertFromClass");
-        private static readonly MethodInfo methodConvertFromCollection
+        private static readonly MethodInfo MethodConvertFromCollection
             = typeof(Config)
                 .GetMethods(BindingFlags.NonPublic | BindingFlags.Static)
                 .First(m => m.Name == "ConvertFromCollection");
-        private static readonly MethodInfo methodCVDataFromCustom
+        private static readonly MethodInfo MethodCvDataFromCustom
             = typeof(Config)
                 .GetMethods(BindingFlags.NonPublic | BindingFlags.Static)
-                .First(m => m.Name == "CVDataFromCustom");
+                .First(m => m.Name == "CvDataFromCustom");
         #endregion
         
-        public static ConfigValue ConvertFromClass<C>(C instance)
-            where C: class, new()
+        public static ConfigValue ConvertFromClass<TC>(TC instance)
+            where TC: class, new()
         {
             if (instance == null) { return null; }
 
-            if (typeof(C).GetInterfaces().Contains(typeof(ICollection)))
+            if (typeof(TC).GetInterfaces().Contains(typeof(ICollection)))
             {
-                return ConvertFromCollectionWrap(instance, "array");
+                return ConvertFromCollectionWrap(instance);
             }
-            if (instance == null) { return null; }
 
-            var config = Config.Create();
-            foreach (FieldInfo field in typeof(C).GetFields())
+            var config = Create();
+            foreach (var field in typeof(TC).GetFields())
             {
-                string path = field.Name.ToLowerInvariant();
+                var path = field.Name.ToLowerInvariant();
                 var dataSourceAttribute = field.GetCustomAttribute<ConfigDataSourceAttribute>();
                 if (dataSourceAttribute != null)
                 {
@@ -50,9 +50,8 @@ namespace ConfigManager
                 if (field.FieldType.GetTypeInfo().IsPrimitive
                     || field.FieldType.GetConstructor(Type.EmptyTypes) == null)
                 {
-                    var genericConverter = methodCVDataFromCustom.MakeGenericMethod(field.FieldType);
-                    
-                    ConfigValue value = (ConfigValue)genericConverter.Invoke(
+                    var genericConverter = MethodCvDataFromCustom.MakeGenericMethod(field.FieldType);
+                    var value = (ConfigValue)genericConverter.Invoke(
                         null,
                         new[] { fieldValue }
                     );
@@ -63,13 +62,12 @@ namespace ConfigManager
                     var fieldType = field.FieldType;
 
                     var typeSource = field.GetCustomAttribute<ConfigDataTypeSourceAttribute>();
-                    var typePath = fieldType.Name;
                     if (typeSource != null)
                     {
                         var mapping = field.GetCustomAttributes<ConfigDataTypeMappingAttribute>();
-                        typePath = mapping?.FirstOrDefault(attr => attr.FieldType == fieldType)?.TypeName;
+                        var typePath = mapping?.FirstOrDefault(attr => attr.FieldType == fieldType)?.TypeName;
 
-                        if (String.IsNullOrEmpty(typePath))
+                        if (string.IsNullOrEmpty(typePath))
                         {
                             throw new TypeLoadException(
                                 $"Can not find name for type '{fieldType.FullName}'"
@@ -78,7 +76,7 @@ namespace ConfigManager
                         config.SetByPath(typePath, new ConfigValue(typePath));
                     }
 
-                    var genericConverter = methodConvertFromClass.MakeGenericMethod(fieldType);
+                    var genericConverter = MethodConvertFromClass.MakeGenericMethod(fieldType);
                     
                     var innerInstance = (ConfigValue)genericConverter.Invoke(
                         null,
@@ -93,34 +91,33 @@ namespace ConfigManager
             return config;
         }
 
-        private static ConfigValue ConvertFromCollectionWrap<T>(T collection, string name)
+        private static ConfigValue ConvertFromCollectionWrap<T>(T collection)
             where T : class, new()
         {
             var elementsType = typeof(T).GetGenericArguments().Single();
-            var genericConverter = methodConvertFromCollection.MakeGenericMethod(typeof(T), elementsType);
+            var genericConverter = MethodConvertFromCollection.MakeGenericMethod(elementsType);
 
-            return (ConfigValue)genericConverter.Invoke(null, new object[] { collection, name });
+            return (ConfigValue)genericConverter.Invoke(null, new object[] { collection });
         }
 
-        private static ConfigValue ConvertFromCollection<T, E>(ICollection<E> collection, string name)
-            where T : class, ICollection
+        private static ConfigValue ConvertFromCollection<TE>(IEnumerable<TE> collection)
         {
-            var elementType = typeof(E);
-            var config = Config.Create();
+            var elementType = typeof(TE);
+            var config = Create();
 
             if (elementType.GetTypeInfo().IsPrimitive
                 || elementType.GetConstructor(Type.EmptyTypes) == null)
             {
-                foreach (E value in collection)
+                foreach (var value in collection)
                 {
-                    config.Set(":", CVDataFromCustom(value));
+                    config.Set(":", CvDataFromCustom(value));
                 }
             }
             else
             {
-                var genericConverter = methodConvertFromClass.MakeGenericMethod(elementType);
+                var genericConverter = MethodConvertFromClass.MakeGenericMethod(elementType);
 
-                foreach (E value in collection)
+                foreach (var value in collection)
                 {
                     config.Set(":", (ConfigValue)genericConverter.Invoke(null, new object[] { value }));
                 }
@@ -129,14 +126,14 @@ namespace ConfigManager
             return config;
         }
 
-        private static ConfigValue CVDataFromCustom<T>(T value)
+        private static ConfigValue CvDataFromCustom<T>(T value)
         {
             var str = value.ToString();
             var escaped = ConfigValue.EscapeString(str);
 
-            if (str.Count(Char.IsWhiteSpace) != 0
+            if (str.Count(char.IsWhiteSpace) != 0
                 || escaped != str
-                || String.IsNullOrEmpty(escaped))
+                || string.IsNullOrEmpty(escaped))
             {
                 escaped = $"\"{escaped}\"";
             }

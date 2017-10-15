@@ -11,11 +11,11 @@ namespace ConfigManager
     public class ConfigValue
     {
         #region Data
-        private Dictionary<string, List<ConfigValue>> _values;
+        private readonly Dictionary<string, List<ConfigValue>> _values;
         private string _data;
         private List<ConfigValue> _parsedData;
 
-        private static readonly IReadOnlyDictionary<string, string> swapList
+        private static readonly IReadOnlyDictionary<string, string> SwapList
             = new Dictionary<string, string>
             {
                 { @"\\", @"\" },
@@ -23,37 +23,20 @@ namespace ConfigManager
                 { @"\t", "\t" },
                 { "\\\"", "\"" }
             };
-        private static readonly Regex regexEscapeSwap
-            = new Regex(String.Join("|", swapList.Keys.Select(k => k.Replace("\\", "\\\\"))));
-        private static readonly Regex regexUnescapeSwap
-            = new Regex(String.Join("|", swapList.Values.Select(v => v.Replace("\\", "\\\\"))));
+        private static readonly Regex RegexEscapeSwap
+            = new Regex(string.Join("|", SwapList.Keys.Select(k => k.Replace("\\", "\\\\"))));
+        private static readonly Regex RegexUnescapeSwap
+            = new Regex(string.Join("|", SwapList.Values.Select(v => v.Replace("\\", "\\\\"))));
         #endregion
 
         #region Initialisation methods
-        /// <summary>
-        /// Config values MUST NOT be created using this constrctor.
-        /// </summary>
-        /// <param name="data">---</param>
-        internal ConfigValue(string data)
-            : this(
-                 data: data,
-                 final: false
-            )
-        { }
 
-        internal ConfigValue(string data, bool final)
+        internal ConfigValue(string data, bool final = false)
         {
             _data = data;
             _values = new Dictionary<string, List<ConfigValue>>();
 
-            if (final)
-            {
-                _parsedData = (new List<ConfigValue>() { this });
-            }
-            else
-            {
-                _parsedData = ParseData(_data);
-            }
+            _parsedData = final ? new List<ConfigValue> { this } : ParseData(_data);
         }
 
 
@@ -61,13 +44,13 @@ namespace ConfigManager
         private static List<ConfigValue> ParseData(string data)
         {
             var dataParsed = new List<ConfigValue>();
-            if (String.IsNullOrWhiteSpace(data))
+            if (string.IsNullOrWhiteSpace(data))
             {
                 return dataParsed;
             }
 
-            int from = 0;
-            int index = 0;
+            var from = 0;
+            var index = 0;
             while (index < data.Length)
             {
                 if (data[index] == '"')
@@ -76,13 +59,13 @@ namespace ConfigManager
                     continue;
                 }
 
-                while (index < data.Length && !Char.IsWhiteSpace(data[index]))
+                while (index < data.Length && !char.IsWhiteSpace(data[index]))
                 {
                     index += 1;
                 }
 
                 dataParsed.Add(new ConfigValue(data.Substring(from, index - from), true));
-                while (index < data.Length && Char.IsWhiteSpace(data[index]))
+                while (index < data.Length && char.IsWhiteSpace(data[index]))
                 {
                     index += 1;
                 }
@@ -95,7 +78,7 @@ namespace ConfigManager
 
         private static string ParseString(string data, ref int index)
         {
-            int from = ++index;
+            var from = ++index;
 
             while (index < data.Length)
             {
@@ -178,22 +161,22 @@ namespace ConfigManager
                 return null;
             }
 
-            List<ConfigValue> targets = new List<ConfigValue>() { this };
-            if (String.IsNullOrWhiteSpace(path))
+            var targets = new List<ConfigValue> { this };
+            if (string.IsNullOrWhiteSpace(path))
             {
                 return targets;
             }
 
             var pathLower = path.Trim().ToLowerInvariant();
-            int position = 0;
+            var position = 0;
             while (position < pathLower.Length)
             {
-                if (Char.IsDigit(pathLower[position]))
+                if (char.IsDigit(pathLower[position]))
                 {
-                    string indexStr = new string(
-                        pathLower.Skip(position).TakeWhile(Char.IsDigit).ToArray()
+                    var indexStr = new string(
+                        pathLower.Skip(position).TakeWhile(char.IsDigit).ToArray()
                     );
-                    int index = int.Parse(indexStr, NumberStyles.Integer, CultureInfo.InvariantCulture);
+                    var index = int.Parse(indexStr, NumberStyles.Integer, CultureInfo.InvariantCulture);
                     var newTarget = targets.ElementAtOrDefault(index);
                     if (newTarget == null)
                     {
@@ -204,10 +187,10 @@ namespace ConfigManager
                     targets.Add(newTarget);
                     position += indexStr.Length;
                 }
-                else if (Char.IsLetter(pathLower[position]))
+                else if (char.IsLetter(pathLower[position]))
                 {
-                    string key = new string(
-                        pathLower.Skip(position).TakeWhile(Char.IsLetter).ToArray()
+                    var key = new string(
+                        pathLower.Skip(position).TakeWhile(char.IsLetter).ToArray()
                     );
                     var newTargetsList = targets.FirstOrDefault()?.GetAll(key);
                     if (newTargetsList == null)
@@ -226,12 +209,12 @@ namespace ConfigManager
                 {
                     position += 1;
                 }
-                else if (pathLower[position] == '$' && Char.IsDigit(pathLower.ElementAtOrDefault(position + 1)))
+                else if (pathLower[position] == '$' && char.IsDigit(pathLower.ElementAtOrDefault(position + 1)))
                 {
-                    string indexStr = new string(
-                        pathLower.Skip(position).TakeWhile(c => Char.IsDigit(c) || c == '$').ToArray()
+                    var indexStr = new string(
+                        pathLower.Skip(position).TakeWhile(c => char.IsDigit(c) || c == '$').ToArray()
                     );
-                    int index = int.Parse(indexStr.Substring(1), NumberStyles.Integer, CultureInfo.InvariantCulture);
+                    var index = int.Parse(indexStr.Substring(1), NumberStyles.Integer, CultureInfo.InvariantCulture);
                     var target = targets[0];
                     var newTarget = target.AsConfigArray().ElementAtOrDefault(index);
                     if (newTarget == null)
@@ -310,7 +293,7 @@ namespace ConfigManager
         {
             if (name == null)
             {
-                throw new ArgumentNullException("name");
+                throw new ArgumentNullException(nameof(name));
             }
             if (value == null) { return this; }
 
@@ -368,14 +351,14 @@ namespace ConfigManager
             var target = root;
             var name = ":";
 
-            while (!String.IsNullOrEmpty(pathLower)) {
-                if (Char.IsDigit(pathLower.FirstOrDefault()))
+            while (!string.IsNullOrEmpty(pathLower)) {
+                if (char.IsDigit(pathLower.FirstOrDefault()))
                 {
-                    string indexStr = new string(
-                        pathLower.TakeWhile(Char.IsDigit).ToArray()
+                    var indexStr = new string(
+                        pathLower.TakeWhile(char.IsDigit).ToArray()
                     );
 
-                    int sindex = int.Parse(indexStr, NumberStyles.Integer, CultureInfo.InvariantCulture);
+                    var sindex = int.Parse(indexStr, NumberStyles.Integer, CultureInfo.InvariantCulture);
 
                     while (targetParent.GetAll(name).Count <= sindex)
                     {
@@ -385,10 +368,10 @@ namespace ConfigManager
                     pathLower = pathLower.Substring(indexStr.Length).Trim().TrimStart('.');
                     target = targetParent.GetAll(name)[sindex];
                 }
-                else if (Char.IsLetter(pathLower.First()))
+                else if (char.IsLetter(pathLower.First()))
                 {
-                    string key = new string(
-                        pathLower.TakeWhile(Char.IsLetter).ToArray()
+                    var key = new string(
+                        pathLower.TakeWhile(char.IsLetter).ToArray()
                     );
 
                     pathLower = pathLower.Substring(key.Length).Trim().TrimStart('.');
@@ -400,17 +383,17 @@ namespace ConfigManager
                     target = target.Get(key);
                     name = key;
                 }
-                else if (pathLower.First() == '$' && Char.IsDigit(pathLower.ElementAtOrDefault(1)))
+                else if (pathLower.First() == '$' && char.IsDigit(pathLower.ElementAtOrDefault(1)))
                 {
-                    string indexStr = new string(
-                        pathLower.Skip(1).TakeWhile(Char.IsDigit).ToArray()
+                    var indexStr = new string(
+                        pathLower.Skip(1).TakeWhile(char.IsDigit).ToArray()
                     );
-                    int sindex = int.Parse(indexStr, NumberStyles.Integer, CultureInfo.InvariantCulture);
+                    var sindex = int.Parse(indexStr, NumberStyles.Integer, CultureInfo.InvariantCulture);
                     target.InsertIntoData(sindex, value._parsedData.First()._data);
                     target._data = target.ParsedDataToRawString();
 
                     pathLower = pathLower.Substring(indexStr.Length + 1).Trim().TrimStart('.');
-                    if (!String.IsNullOrEmpty(pathLower))
+                    if (!string.IsNullOrEmpty(pathLower))
                     {
                         throw new FormatException(
                             $"Data arguments indexation must be the last operation. Rest: '{pathLower}'"
@@ -449,7 +432,7 @@ namespace ConfigManager
         {
             if (name == null)
             {
-                throw new ArgumentNullException("name");
+                throw new ArgumentNullException(nameof(name));
             }
 
             return _values.ContainsKey(name.ToLowerInvariant());
@@ -494,22 +477,22 @@ namespace ConfigManager
         /// Gets data as 32 bit integer(int) value
         /// </summary>
         /// <returns>Int32 value</returns>
-        public Int32 AsInt() => Int32.Parse(_parsedData[0]._data, NumberStyles.Integer, CultureInfo.InvariantCulture);
+        public int AsInt() => int.Parse(_parsedData[0]._data, NumberStyles.Integer, CultureInfo.InvariantCulture);
         /// <summary>
         /// Gets data as 64 bit integer(long) value
         /// </summary>
         /// <returns>Int64 value</returns>
-        public Int64 AsLong() => Int64.Parse(_parsedData[0]._data, NumberStyles.Integer, CultureInfo.InvariantCulture);
+        public long AsLong() => long.Parse(_parsedData[0]._data, NumberStyles.Integer, CultureInfo.InvariantCulture);
         /// <summary>
         /// Gets data as single precision floating point(float) value
         /// </summary>
         /// <returns>Single precision floating point value</returns>
-        public float AsFloat() => Single.Parse(_parsedData[0]._data, NumberStyles.Number, CultureInfo.InvariantCulture);
+        public float AsFloat() => float.Parse(_parsedData[0]._data, NumberStyles.Number, CultureInfo.InvariantCulture);
         /// <summary>
         /// Gets data as double precision floating point(double) value
         /// </summary>
         /// <returns>Double precision floating point value</returns>
-        public double AsDouble() => Double.Parse(_parsedData[0]._data, NumberStyles.Number, CultureInfo.InvariantCulture);
+        public double AsDouble() => double.Parse(_parsedData[0]._data, NumberStyles.Number, CultureInfo.InvariantCulture);
 
         /// <summary>
         /// Gets data as a list of ConfigValues.
@@ -564,15 +547,15 @@ namespace ConfigManager
 
         #region Special methods
         internal static string EscapeString(string data)
-            => regexUnescapeSwap.Replace(data ?? "", v => swapList.First(x => x.Value == v.Value).Key);
+            => RegexUnescapeSwap.Replace(data ?? "", v => SwapList.First(x => x.Value == v.Value).Key);
 
         internal static string UnescapeString(string data)
-            => regexEscapeSwap.Replace(data ?? "", v => swapList[v.Value]);
+            => RegexEscapeSwap.Replace(data ?? "", v => SwapList[v.Value]);
 
         internal static ConfigValue ConfigValueFromCustom<T>(T value)
         {
             var tc = TypeDescriptor.GetConverter(typeof(string));
-            string stringValue = (string)tc.ConvertFrom(value);
+            var stringValue = (string)tc.ConvertFrom(value);
             return new ConfigValue(stringValue);
         }
 
@@ -580,7 +563,7 @@ namespace ConfigManager
         {
             while (_parsedData.Count <= index)
             {
-                _parsedData.Add(new ConfigValue(String.Empty, final: true));
+                _parsedData.Add(new ConfigValue(string.Empty, final: true));
             }
             _parsedData[index] = new ConfigValue(value, final: true);
         }
@@ -589,14 +572,14 @@ namespace ConfigManager
         {
             var builder = new StringBuilder(_parsedData.Count * 2);
 
-            for (int index = 0; index < _parsedData.Count; ++index)
+            for (var index = 0; index < _parsedData.Count; ++index)
             {
                 if (index != 0) { builder.Append(" "); }
 
                 var escaped = EscapeString(_parsedData[index]._data);
-                if (escaped.Count(Char.IsWhiteSpace) != 0
+                if (escaped.Count(char.IsWhiteSpace) != 0
                     || escaped != _parsedData[index]._data
-                    || String.IsNullOrEmpty(escaped)) {
+                    || string.IsNullOrEmpty(escaped)) {
                     escaped = $"\"{escaped}\"";
                 }
 

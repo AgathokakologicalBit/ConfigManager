@@ -2,13 +2,13 @@
 
 namespace ConfigManager
 {
-    [AttributeUsage(AttributeTargets.Field, AllowMultiple = false, Inherited = true)]
+    [AttributeUsage(AttributeTargets.Field)]
     public sealed class ConfigDataSourceAttribute : Attribute
     {
         /// <summary>
         /// Holds Config value path
         /// </summary>
-        public string DataPath { get; private set; } = "";
+        public string DataPath { get; }
 
         /// <summary>
         /// Specifies path from wich data will be loaded into target field
@@ -20,13 +20,13 @@ namespace ConfigManager
         }
     }
 
-    [AttributeUsage(AttributeTargets.Field, AllowMultiple = false, Inherited = true)]
+    [AttributeUsage(AttributeTargets.Field)]
     public sealed class ConfigDataTypeSourceAttribute : Attribute
     {
         /// <summary>
         /// Holds Value type path 
         /// </summary>
-        public string DataPath { get; private set; } = "";
+        public string DataPath { get; }
 
         /// <summary>
         /// Specifies path from wich type name will be loaded
@@ -38,17 +38,17 @@ namespace ConfigManager
         }
     }
 
-    [AttributeUsage(AttributeTargets.Field, AllowMultiple = true, Inherited = true)]
+    [AttributeUsage(AttributeTargets.Field, AllowMultiple = true)]
     public sealed class ConfigDataTypeMappingAttribute : Attribute
     {
         /// <summary>
         /// Holds custom name for given type
         /// </summary>
-        public string TypeName { get; private set; }
+        public string TypeName { get; }
         /// <summary>
         /// Holds custom Type associated with gien name
         /// </summary>
-        public Type FieldType { get; private set; }
+        public Type FieldType { get; }
 
         /// <summary>
         /// Specifies custom name for type
@@ -57,13 +57,13 @@ namespace ConfigManager
         /// <param name="type">Target type</param>
         public ConfigDataTypeMappingAttribute(string name, Type type)
         {
-            if (String.IsNullOrWhiteSpace(name))
+            if (string.IsNullOrWhiteSpace(name))
             {
-                throw new ArgumentException("Name can not be empty", "name");
+                throw new ArgumentException(nameof(name));
             }
             if (type == null)
             {
-                throw new ArgumentNullException("type");
+                throw new ArgumentNullException(nameof(type));
             }
 
             TypeName = name.ToLowerInvariant();

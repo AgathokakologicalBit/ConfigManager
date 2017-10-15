@@ -23,7 +23,7 @@ namespace ConfigManagerTest
 
             Assert.AreEqual(1, config.GetKeys().Length, "1 value should be loaded");
 
-            ConfigValue value = config.Get(config.GetKeys()[0]);
+            var value = config.Get(config.GetKeys()[0]);
             Assert.IsNotNull(value, "Should get existing key");
             Assert.AreEqual("value", ConfigTestTools.GetData(value), "Should have a data after key");
         }
@@ -35,7 +35,7 @@ namespace ConfigManagerTest
 
             Assert.AreEqual(1, config.GetKeys().Length, "1 value should be loaded");
 
-            IReadOnlyList<ConfigValue> values = config.GetAll(config.GetKeys()[0]);
+            var values = config.GetAll(config.GetKeys()[0]);
             Assert.IsNotNull(values, "Should get all existing values from key");
             Assert.AreEqual(2, values.Count, "Should get exactly 2 values for key");
             Assert.AreEqual("1", ConfigTestTools.GetData(values[0]), "Should have a data after key 1");
@@ -49,8 +49,8 @@ namespace ConfigManagerTest
 
             Assert.AreEqual(2, config.GetKeys().Length, "2 values should be loaded");
 
-            ConfigValue valueA = config.Get(config.GetKeys()[0]);
-            ConfigValue valueB = config.Get(config.GetKeys()[1]);
+            var valueA = config.Get(config.GetKeys()[0]);
+            var valueB = config.Get(config.GetKeys()[1]);
 
             Assert.IsNotNull(valueA, "Should get a value from key 1");
             Assert.IsNotNull(valueB, "Should get a value from key 2");
@@ -65,7 +65,7 @@ namespace ConfigManagerTest
             var config = LoadValidConfig("key 3 2 1");
             Assert.AreEqual(1, config.GetKeys().Length, "1 value should be loaded");
 
-            ConfigValue value = config.Get(config.GetKeys()[0]);
+            var value = config.Get(config.GetKeys()[0]);
             Assert.IsNotNull(value, "Should get a value from key");
 
             Assert.AreEqual("3 2 1", ConfigTestTools.GetData(value), "Should have a data after key");
@@ -83,12 +83,12 @@ namespace ConfigManagerTest
             var config = LoadValidConfig("key value\n  key inner");
             Assert.AreEqual(1, config.GetKeys().Length, "1 value should be loaded at top level");
 
-            ConfigValue value = config.Get(config.GetKeys()[0]);
+            var value = config.Get(config.GetKeys()[0]);
             Assert.IsNotNull(value, "Should get a value from key");
             Assert.AreEqual("value", ConfigTestTools.GetData(value), "Should have a data value");
             Assert.AreEqual(1, value.GetKeys().Length, "Should have 1 inner value");
 
-            ConfigValue innerValue = value.Get(value.GetKeys()[0]);
+            var innerValue = value.Get(value.GetKeys()[0]);
             Assert.IsNotNull(value, "Should get a value from inner key");
             Assert.AreEqual("inner", ConfigTestTools.GetData(innerValue), "Should have a data value");
         }
@@ -115,7 +115,7 @@ namespace ConfigManagerTest
 
         private static ConfigValue LoadValidConfig(string data)
         {
-            ConfigValue config = Config.Load(data);
+            var config = Config.Load(data);
 
             Assert.IsNotNull(config, "Empty config should be valid");
             Assert.IsNull(ConfigTestTools.GetData(config), "Config top level data should be null");

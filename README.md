@@ -4,10 +4,10 @@ Light configuration manager that supports loading into different targets: Class 
 # Installing library
 Latest builds:
 
-| type    | version | link       |
-|---------|---------|------------|
-| release | ?       | [---](#) |
-| alpha   | 0.8     | [download](https://github.com/Mikhail158/ConfigManager/releases/tag/v0.8a) |
+| type    | version | date       | link       |
+|---------|---------|------------|------------|
+| release | N/A     | N/A        | [N/A](#) |
+| alpha   | 0.8.2   | 14.10.2017 | [download](https://github.com/Mikhail158/ConfigManager/releases/tag/v0.8.2a) |
 
 Alpha versions are very unstable. It is not recommended to use them in your projects.
 

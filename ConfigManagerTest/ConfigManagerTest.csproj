@@ -1,35 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
-
     <IsPackable>false</IsPackable>
-
     <Authors>Ermishin Michael</Authors>
-
     <Company />
-
     <Description>Unit tests for ConfigManager project</Description>
-
     <Copyright>Copyright © Ermishin Michael 2017</Copyright>
-
-    <PackageProjectUrl></PackageProjectUrl>
-
+    <PackageProjectUrl>
+    </PackageProjectUrl>
     <RepositoryUrl>https://github.com/Mikhail158/ConfigManager</RepositoryUrl>
-
     <PackageTags>configuration, manager, configmanager, tests</PackageTags>
-
     <NeutralLanguage>zh-Hans</NeutralLanguage>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0-preview-20170628-02" />
     <PackageReference Include="MSTest.TestAdapter" Version="1.1.18" />
     <PackageReference Include="MSTest.TestFramework" Version="1.1.18" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\ConfigManager\ConfigManager.csproj" />
   </ItemGroup>
-
 </Project>

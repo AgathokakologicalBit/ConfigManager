@@ -1,7 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ConfigManager;
 using System;
-using System.Collections.Generic;
 
 namespace ConfigManagerTest
 {
@@ -11,7 +10,7 @@ namespace ConfigManagerTest
         [TestMethod]
         public void TestLoadEmpty()
         {
-            var config = LoadValidConfig("");
+            var config = ConfigTestTools.LoadValidConfig("");
 
             Assert.AreEqual(0, config.GetKeys().Length, "Config should have no enclosed values by default");
         }
@@ -19,7 +18,7 @@ namespace ConfigManagerTest
         [TestMethod]
         public void TestLoadValue()
         {
-            var config = LoadValidConfig("key value");
+            var config = ConfigTestTools.LoadValidConfig("key value");
 
             Assert.AreEqual(1, config.GetKeys().Length, "1 value should be loaded");
 
@@ -31,7 +30,7 @@ namespace ConfigManagerTest
         [TestMethod]
         public void TestLoadMultipleValues()
         {
-            var config = LoadValidConfig("key 1\nkey 2");
+            var config = ConfigTestTools.LoadValidConfig("key 1\nkey 2");
 
             Assert.AreEqual(1, config.GetKeys().Length, "1 value should be loaded");
 
@@ -45,7 +44,7 @@ namespace ConfigManagerTest
         [TestMethod]
         public void TestLoadMultipleKeys()
         {
-            var config = LoadValidConfig("keyA 1\nkeyB 2");
+            var config = ConfigTestTools.LoadValidConfig("keyA 1\nkeyB 2");
 
             Assert.AreEqual(2, config.GetKeys().Length, "2 values should be loaded");
 
@@ -62,7 +61,7 @@ namespace ConfigManagerTest
         [TestMethod]
         public void TestLoadMultipleData()
         {
-            var config = LoadValidConfig("key 3 2 1");
+            var config = ConfigTestTools.LoadValidConfig("key 3 2 1");
             Assert.AreEqual(1, config.GetKeys().Length, "1 value should be loaded");
 
             var value = config.Get(config.GetKeys()[0]);
@@ -80,7 +79,7 @@ namespace ConfigManagerTest
         [TestMethod]
         public void TestLoadEnclosedValue()
         {
-            var config = LoadValidConfig("key value\n  key inner");
+            var config = ConfigTestTools.LoadValidConfig("key value\n  key inner");
             Assert.AreEqual(1, config.GetKeys().Length, "1 value should be loaded at top level");
 
             var value = config.Get(config.GetKeys()[0]);
@@ -111,18 +110,6 @@ namespace ConfigManagerTest
         public void TestLoadWrongEnclosedIndentationLevel()
         {
             Config.Load("key\n inner\n\twrong");
-        }
-
-        private static ConfigValue LoadValidConfig(string data)
-        {
-            var config = Config.Load(data);
-
-            Assert.IsNotNull(config, "Empty config should be valid");
-            Assert.IsNull(ConfigTestTools.GetData(config), "Config top level data should be null");
-            Assert.IsNotNull(config.AsConfigList(), "Config should always have parsed values list");
-            Assert.AreEqual(0, config.AsConfigList().Count, "Config should have no data values");
-
-            return config;
         }
     }
 }

@@ -36,7 +36,7 @@ namespace ConfigManager
             _data = data;
             _values = new Dictionary<string, List<ConfigValue>>();
 
-            _parsedData = final ? new List<ConfigValue> { this } : ParseData(_data);
+            _parsedData = final ? new List<ConfigValue> { this } : ParseData(_data?.Trim());
         }
 
 
@@ -45,32 +45,29 @@ namespace ConfigManager
         {
             var dataParsed = new List<ConfigValue>();
             if (string.IsNullOrWhiteSpace(data))
-            {
                 return dataParsed;
-            }
 
             var from = 0;
             var index = 0;
             while (index < data.Length)
             {
+                if (char.IsWhiteSpace(data[index]))
+                {
+                    index += 1;
+                    continue;
+                }
+
                 if (data[index] == '"')
                 {
                     dataParsed.Add(new ConfigValue(ParseString(data, ref index), true));
                     continue;
                 }
 
+                from = index;
                 while (index < data.Length && !char.IsWhiteSpace(data[index]))
-                {
                     index += 1;
-                }
 
                 dataParsed.Add(new ConfigValue(data.Substring(from, index - from), true));
-                while (index < data.Length && char.IsWhiteSpace(data[index]))
-                {
-                    index += 1;
-                }
-
-                from = index;
             }
 
             return dataParsed;
@@ -88,9 +85,7 @@ namespace ConfigManager
                 }
 
                 if (data[index++] == '\\')
-                {
                     ++index;
-                }
             }
 
             throw new FormatException("String does not contains closing character");

@@ -257,13 +257,13 @@ namespace ConfigManager
                     ParseLevel(state, lineIndentation);
                     continue;
                 }
+
                 if (lineIndentation.Length < baseIndentation.Length)
                 {
                     state.Context.Pop();
                     break;
                 }
 
-                // ' ' - is ending key value to prevent -1 in 'IndexOf'
                 var data = line.Substring(lineIndentation.Length);
                 var len = data.IndexOfAny(new[] { ' ', '\t' });
 

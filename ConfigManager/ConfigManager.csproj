@@ -5,14 +5,14 @@
     <TargetFramework>netcoreapp2.0</TargetFramework>
     <ApplicationIcon />
     <StartupObject />
-    <Version>0.8.2</Version>
+    <Version>0.8.3</Version>
     <Authors>Ermishin Michael</Authors>
     <Company />
     <Description>Provides classes for reading configuration files into different targets</Description>
-    <Copyright>Copyright © Ermishin Michael 2017</Copyright>
+    <Copyright>Copyright © Ermishin Michael 2017 - 2018</Copyright>
     <NeutralLanguage></NeutralLanguage>
     <PackageTags>configuration, manager, configmanager, tool</PackageTags>
-    <PackageReleaseNotes>New builds are targeting net Core 2.0</PackageReleaseNotes>
+    <PackageReleaseNotes>No duplications anymore!</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/Mikhail158/ConfigManager</RepositoryUrl>
     <PackageId>ConfigManager</PackageId>
   </PropertyGroup>

@@ -136,7 +136,7 @@ namespace ConfigManager
                     // Skipping not relevant fields
                     continue;
                 }
-                
+
                 if (field.FieldType.GetTypeInfo().IsPrimitive
                     || field.FieldType.GetConstructor(Type.EmptyTypes) == null)
                 {
@@ -152,9 +152,8 @@ namespace ConfigManager
                 }
                 else
                 {
-
                     var fieldType = field.FieldType;
-                    
+
                     var typeSource = field.GetCustomAttribute<ConfigDataTypeSourceAttribute>();
                     var typeName =
                         config.GetByPath(typeSource?.DataPath)
@@ -210,11 +209,10 @@ namespace ConfigManager
 
         private static T LoadToCollection<T, TE>(IEnumerable<ConfigValue> configValues)
             where T : class, ICollection, new()
-            where TE : new()
         {
             var elementType = typeof(TE);
             var collection = (ICollection<TE>)new T();
-            
+
             if (elementType.GetTypeInfo().IsPrimitive
                 || elementType.GetConstructor(Type.EmptyTypes) == null)
             {
@@ -280,7 +278,7 @@ namespace ConfigManager
             }
         }
 
-        
+
         private static void ValidateIndentationLevel
             (State state, string lineIndentation, string baseIndentation)
         {

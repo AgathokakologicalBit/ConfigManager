@@ -6,7 +6,7 @@ using System.Reflection;
 
 namespace ConfigManager
 {
-    
+
     public static partial class Config
     {
         #region Method links
@@ -23,9 +23,9 @@ namespace ConfigManager
                 .GetMethods(BindingFlags.NonPublic | BindingFlags.Static)
                 .First(m => m.Name == "CvDataFromCustom");
         #endregion
-        
+
         public static ConfigValue ConvertFromClass<TC>(TC instance)
-            where TC: class, new()
+            where TC : class, new()
         {
             if (instance == null) { return null; }
 
@@ -77,7 +77,7 @@ namespace ConfigManager
                     }
 
                     var genericConverter = MethodConvertFromClass.MakeGenericMethod(fieldType);
-                    
+
                     var innerInstance = (ConfigValue)genericConverter.Invoke(
                         null,
                         new[] { fieldValue }

@@ -30,7 +30,8 @@ namespace ConfigManager
             {
                 var valuesList = config.GetAll(key);
 
-                foreach (var value in valuesList) {
+                foreach (var value in valuesList)
+                {
                     var raw = value.AsRawString();
                     if (!string.IsNullOrEmpty(raw)) { raw = " " + raw; }
 

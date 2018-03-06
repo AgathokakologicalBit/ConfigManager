@@ -351,7 +351,8 @@ namespace ConfigManager
             var target = root;
             var name = ":";
 
-            while (!string.IsNullOrEmpty(pathLower)) {
+            while (!string.IsNullOrEmpty(pathLower))
+            {
                 if (char.IsDigit(pathLower.FirstOrDefault()))
                 {
                     var indexStr = new string(
@@ -579,7 +580,8 @@ namespace ConfigManager
                 var escaped = EscapeString(_parsedData[index]._data);
                 if (escaped.Count(char.IsWhiteSpace) != 0
                     || escaped != _parsedData[index]._data
-                    || string.IsNullOrEmpty(escaped)) {
+                    || string.IsNullOrEmpty(escaped))
+                {
                     escaped = $"\"{escaped}\"";
                 }
 

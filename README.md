@@ -8,6 +8,7 @@ Latest builds:
 |---------|---------|------------|------------|
 | release | N/A     | N/A        | [N/A](#) |
 | alpha   | 0.8.2   | 14.10.2017 | [download](https://github.com/Mikhail158/ConfigManager/releases/tag/v0.8.2a) |
+| beta    | 0.8.3   | 06.03.2018 | [download](https://github.com/Mikhail158/ConfigManager/releases/tag/v0.8.3a) |
 
 Alpha versions are very unstable. It is not recommended to use them in your projects.
 

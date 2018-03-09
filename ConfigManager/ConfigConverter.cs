@@ -37,12 +37,9 @@ namespace ConfigManager
             var config = Create();
             foreach (var field in typeof(TC).GetFields())
             {
-                var path = field.Name.ToLowerInvariant();
                 var dataSourceAttribute = field.GetCustomAttribute<ConfigDataSourceAttribute>();
-                if (dataSourceAttribute != null)
-                {
-                    path = dataSourceAttribute.DataPath;
-                }
+                var path = dataSourceAttribute?.DataPath
+                            ?? field.Name.ToLowerInvariant();
 
                 var fieldValue = field.GetValue(instance);
                 if (fieldValue == null) { continue; }
@@ -60,12 +57,14 @@ namespace ConfigManager
                 else
                 {
                     var fieldType = field.FieldType;
-
                     var typeSource = field.GetCustomAttribute<ConfigDataTypeSourceAttribute>();
+
                     if (typeSource != null)
                     {
                         var mapping = field.GetCustomAttributes<ConfigDataTypeMappingAttribute>();
-                        var typePath = mapping?.FirstOrDefault(attr => attr.FieldType == fieldType)?.TypeName;
+                        var typePath = mapping
+                            ?.FirstOrDefault(attr => attr.FieldType == fieldType)
+                            ?.TypeName;
 
                         if (string.IsNullOrEmpty(typePath))
                         {
@@ -77,7 +76,6 @@ namespace ConfigManager
                     }
 
                     var genericConverter = MethodConvertFromClass.MakeGenericMethod(fieldType);
-
                     var innerInstance = (ConfigValue)genericConverter.Invoke(
                         null,
                         new[] { fieldValue }

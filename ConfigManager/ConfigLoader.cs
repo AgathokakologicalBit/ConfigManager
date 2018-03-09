@@ -169,14 +169,10 @@ namespace ConfigManager
                                         .GetEntryAssembly()
                                         .GetTypes()
                                         .Where(t => field.FieldType.IsAssignableFrom(t))
-                                        .FirstOrDefault(t => t.Name.ToLowerInvariant() == typeName);
-
-                        if (fieldType == null)
-                        {
-                            throw new TypeLoadException(
-                                $"Can not find type with name '{typeName}'"
-                            );
-                        }
+                                        .FirstOrDefault(t => t.Name.ToLowerInvariant() == typeName)
+                                    ?? throw new TypeLoadException(
+                                        $"Can not find type with name '{typeName}'"
+                                    );
                     }
 
                     var genericLoadToClass = MethodLoadToClass.MakeGenericMethod(fieldType);
@@ -227,7 +223,7 @@ namespace ConfigManager
 
                 foreach (var value in configValues)
                 {
-                    collection.Add((TE)genericLoadToClass.Invoke(null, new object[] { value }));
+                    collection.Add((TE)genericLoadToClass.Invoke(null, new[] { value }));
                 }
             }
 

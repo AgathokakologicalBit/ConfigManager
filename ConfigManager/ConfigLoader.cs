@@ -214,7 +214,11 @@ namespace ConfigManager
             {
                 foreach (var value in configValues)
                 {
-                    collection.Add(value.AsCustom<TE>());
+                    collection.Add(
+                        value.AsConfigList().Count == 1
+                            ? value.AsCustom<TE>()
+                            : value.AsCustomFromRaw<TE>()
+                    );
                 }
             }
             else

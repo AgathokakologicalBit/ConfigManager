@@ -18,6 +18,8 @@ namespace ConfigManager
                 .First(m => m.Name == "LoadToCollection");
         private static readonly MethodInfo MethodAsCustom
             = typeof(ConfigValue).GetMethod("AsCustom");
+        private static readonly MethodInfo MethodAsCustomFromRaw
+            = typeof(ConfigValue).GetMethod("AsCustomFromRaw");
         #endregion
 
         #region State
@@ -121,15 +123,11 @@ namespace ConfigManager
             }
 
             var instance = new T();
-
             foreach (var field in typeof(T).GetFields())
             {
-                var path = field.Name.ToLowerInvariant();
                 var dataSourceAttribute = field.GetCustomAttribute<ConfigDataSourceAttribute>();
-                if (dataSourceAttribute != null)
-                {
-                    path = dataSourceAttribute.DataPath;
-                }
+                var path = dataSourceAttribute?.DataPath
+                    ?? field.Name.ToLowerInvariant();
 
                 if (!config.ContainsPath(path))
                 {
@@ -140,13 +138,13 @@ namespace ConfigManager
                 if (field.FieldType.GetTypeInfo().IsPrimitive
                     || field.FieldType.GetConstructor(Type.EmptyTypes) == null)
                 {
-                    var genericAsCustom = MethodAsCustom.MakeGenericMethod(field.FieldType);
-                    var value = genericAsCustom.Invoke(
-                        config.GetByPath(
-                            path
-                        ),
-                        null
-                    );
+                    var configValue = config.GetByPath(path);
+                    var genericAsCustom =
+                        configValue.AsConfigList().Count == 1
+                            ? MethodAsCustom.MakeGenericMethod(field.FieldType)
+                            : MethodAsCustomFromRaw.MakeGenericMethod(field.FieldType);
+
+                    var value = genericAsCustom.Invoke(configValue, null);
 
                     field.SetValue(instance, value);
                 }
